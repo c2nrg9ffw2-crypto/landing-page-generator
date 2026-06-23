@@ -150,3 +150,37 @@ tbody tr:hover { background: #f7fafc; }
 }
 
 .del-btn:hover { background: #fed7d7; color: #c53030; opacity: 1; }
+
+.chart-card {
+  margin-top: 1.5rem;
+}
+
+#purchaseChart {
+  max-height: 180px;
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.toggle-group {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.toggle-btn {
+  background: #edf2f7;
+  color: #4a5568;
+  font-size: 0.85rem;
+  padding: 0.35rem 0.9rem;
+  font-weight: 600;
+  border-radius: 6px;
+}
+
+.toggle-btn.active {
+  background: #4299e1;
+  color: #fff;
+}

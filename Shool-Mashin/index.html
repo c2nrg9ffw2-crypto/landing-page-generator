@@ -54,7 +54,6 @@
       <thead>
         <tr>
           <th>Snack</th>
-          <th>Starting Stock</th>
           <th>Purchased</th>
           <th>Remaining</th>
           <th>Status</th>
@@ -63,12 +62,25 @@
       </thead>
       <tbody id="tableBody">
         <tr id="emptyRow">
-          <td colspan="6" class="empty">No snacks added yet.</td>
+          <td colspan="5" class="empty">No snacks added yet.</td>
         </tr>
       </tbody>
     </table>
+  <!-- Chart -->
+  <div class="card chart-card">
+    <div class="chart-header">
+      <h2>Purchases Over Time</h2>
+      <div class="toggle-group">
+        <button id="viewDaily" class="toggle-btn active">Daily</button>
+        <button id="viewMonthly" class="toggle-btn">Monthly</button>
+      </div>
+    </div>
+    <canvas id="purchaseChart"></canvas>
   </div>
 
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
