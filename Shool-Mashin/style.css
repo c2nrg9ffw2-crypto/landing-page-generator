@@ -1,0 +1,152 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background: #f0f4f8;
+  color: #1a202c;
+  padding: 2rem 1rem;
+  min-height: 100vh;
+  font-size: 1.05rem;
+}
+
+.container {
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+h1 {
+  font-size: 1.8rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+  color: #2d3748;
+}
+
+h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  color: #4a5568;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.panels {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 750px) {
+  .panels { grid-template-columns: 1fr; }
+}
+
+.card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+
+.form-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+input, select {
+  flex: 1;
+  min-width: 0;
+  padding: 0.75rem 1rem;
+  border: 2px solid #cbd5e0;
+  border-radius: 8px;
+  font-size: 1.05rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+input:focus, select:focus {
+  border-color: #4299e1;
+}
+
+input[type="number"] { max-width: 130px; }
+
+button {
+  padding: 0.75rem 1.25rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1.05rem;
+  font-weight: 600;
+  transition: opacity 0.15s;
+}
+
+button:hover { opacity: 0.85; }
+
+#addSnackBtn  { background: #48bb78; color: #fff; }
+#logSaleBtn   { background: #4299e1; color: #fff; }
+#restockBtn   { background: #ed8936; color: #fff; }
+
+.error {
+  color: #e53e3e;
+  font-size: 0.82rem;
+  margin-top: 0.4rem;
+  min-height: 1.1em;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+
+thead {
+  background: #2d3748;
+  color: #fff;
+}
+
+th {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+}
+
+td {
+  padding: 0.7rem 1rem;
+  border-top: 1px solid #edf2f7;
+  font-size: 0.9rem;
+}
+
+tbody tr:hover { background: #f7fafc; }
+
+.empty {
+  text-align: center;
+  color: #a0aec0;
+  padding: 2rem;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.status-ok    { background: #c6f6d5; color: #276749; }
+.status-low   { background: #fefcbf; color: #744210; }
+.status-empty { background: #fed7d7; color: #742a2a; }
+
+.del-btn {
+  background: transparent;
+  color: #a0aec0;
+  font-size: 0.85rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+}
+
+.del-btn:hover { background: #fed7d7; color: #c53030; opacity: 1; }

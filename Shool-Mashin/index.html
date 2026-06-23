@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vending Machine Tracker</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>🥤 Vending Machine Tracker</h1>
+
+    <div class="panels">
+      <!-- Add Snack -->
+      <div class="card">
+        <h2>Add Snack</h2>
+        <div class="form-row">
+          <input id="snackName" type="text" placeholder="Snack name" />
+          <input id="snackStock" type="number" placeholder="Starting stock" min="1" />
+          <button id="addSnackBtn">+ Add</button>
+        </div>
+        <p id="addError" class="error"></p>
+      </div>
+
+      <!-- Log Sale -->
+      <div class="card">
+        <h2>Log Sale</h2>
+        <div class="form-row">
+          <select id="saleSnack">
+            <option value="">— Select snack —</option>
+          </select>
+          <input id="saleQty" type="number" placeholder="Quantity" min="1" />
+          <button id="logSaleBtn">✓ Log</button>
+        </div>
+        <p id="saleError" class="error"></p>
+      </div>
+
+      <!-- Restock -->
+      <div class="card">
+        <h2>Restock</h2>
+        <div class="form-row">
+          <select id="restockSnack">
+            <option value="">— Select snack —</option>
+          </select>
+          <input id="restockQty" type="number" placeholder="Add quantity" min="1" />
+          <button id="restockBtn">↑ Restock</button>
+        </div>
+        <p id="restockError" class="error"></p>
+      </div>
+    </div>
+
+    <!-- Inventory Table -->
+    <table id="inventoryTable">
+      <thead>
+        <tr>
+          <th>Snack</th>
+          <th>Starting Stock</th>
+          <th>Purchased</th>
+          <th>Remaining</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+        <tr id="emptyRow">
+          <td colspan="6" class="empty">No snacks added yet.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
