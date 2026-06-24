@@ -57,19 +57,24 @@ Two `localStorage` keys:
 ```
 
 `remaining` is stored and kept in sync manually — not computed on read.
-`sellPrice` is always **computed**, never stored: `buyCost * (1 + margin / 100)`.
+`sellPrice` is always **computed**, never stored (see Pricing Model).
 On load, `migrateData()` converts any legacy `sellPrice` field to `margin`.
-
-A `migrateData()` call at startup converts any legacy `sellPrice` field into `margin`.
 
 Additional `localStorage` keys for UI state:
 - `showChart`, `showProfit`, `darkMode` — boolean toggles
 - `hiddenSnacks` — JSON array of snack names hidden from the chart
 - `overrideDate` — ISO date string used instead of today when logging sales
 
+`chartView` (`'daily'` | `'monthly'`) is a module-level variable — **not** persisted to localStorage; resets to `'daily'` on every page reload.
+
 ## Render Cycle
 
 Every mutation ends with `render()`, which rebuilds the entire table body, both `<select>` dropdowns, the snack chart toggles, and the edit-prices list from scratch. `renderChart()` is called separately and destroys/recreates the Chart.js instance each time.
+
+## Gotchas
+
+- `#snackSellPrice` in the HTML captures **margin %**, not sell price — the ID is a naming artifact from before the margin migration.
+- The "Add Snack" form lives inside the Settings slide-in panel (`#settingsPanel`), not in the main page body.
 
 ## Key Features & Where They Live
 
@@ -81,16 +86,18 @@ Every mutation ends with `render()`, which rebuilds the entire table body, both 
 | Per-snack chart toggles | `renderSnackToggles()` → `hiddenSnacks` Set |
 | Bulk margin adjustment | `applyPriceChange(['margin'])` |
 | Sale date override | `getLogDate()` returns `overrideDate` or today |
-| Export to .xlsx | `exportToExcel()` using SheetJS — two sheets: Sales Log, Daily Totals |
+| Export to .xlsx | `exportToExcel()` using SheetJS — Sales Log (per-entry: date, snack, qty, profit) and Daily Totals (per-day pivot: snack qty columns + Total + Profit) |
+| Reset all data | Red button at bottom of Settings panel — `localStorage.clear()` + `location.reload()` |
 
 ## Pricing Model
 
 - `buyCost` — unit cost to stock the item
 - `margin` — profit margin % entered by the user
 - `sellPrice` — computed as `buyCost × (1 + margin / 100)` via `computeSellPrice(item)`
-- **Cost** in profit summary = `buyCost × startingStock` (all stocked units, not just sold)
+- **Cost** in profit summary = `buyCost × startingStock` (all stocked units, not just sold). `restock()` adds to `startingStock` cumulatively, which raises this cost figure permanently.
 - **Revenue** = `sellPrice × totalPurchased`
 - **Profit** = Revenue − Cost
+- All monetary values displayed with `fmt()`, which appends ` kr` (SEK)
 
 ## Status Badge Logic (`statusLabel`)
 

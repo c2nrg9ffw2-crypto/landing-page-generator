@@ -84,28 +84,32 @@ function render() {
   const saleSelect = document.getElementById('saleSnack');
   const restockSelect = document.getElementById('restockSnack');
 
-  tbody.innerHTML = '';
   saleSelect.innerHTML = '<option value="">— Select snack —</option>';
   restockSelect.innerHTML = '<option value="">— Select snack —</option>';
 
   if (data.length === 0) {
     tbody.innerHTML = '<tr id="emptyRow"><td colspan="9" class="empty">No snacks added yet.</td></tr>';
     updateProfitSummary([]);
+    renderSnackToggles(data);
+    renderEditPrices(data);
     return;
   }
 
+  const tbodyFrag = document.createDocumentFragment();
+  const saleFrag = document.createDocumentFragment();
+  const restockFrag = document.createDocumentFragment();
+
   data.forEach(item => {
     const { text, cls } = statusLabel(item.remaining, item.startingStock);
-
-    const tr = document.createElement('tr');
     const sellPrice = computeSellPrice(item);
     const itemProfit = (item.buyCost != null && sellPrice != null)
       ? (sellPrice * item.totalPurchased) - (item.buyCost * item.startingStock)
       : null;
     const profitCls = itemProfit == null ? '' : itemProfit >= 0 ? 'profit-pos' : 'profit-neg';
 
+    const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td>${item.name}</td>
+      <td>${escapeHtml(item.name)}</td>
       <td>${fmt(item.buyCost)}</td>
       <td>${sellPrice != null ? fmt(sellPrice) : '—'}</td>
       <td>${item.margin != null ? item.margin.toFixed(1) + '%' : '—'}</td>
@@ -115,35 +119,34 @@ function render() {
       <td><span class="badge ${cls}">${text}</span></td>
       <td><button class="del-btn" data-id="${item.id}">✕</button></td>
     `;
-    tbody.appendChild(tr);
+    tbodyFrag.appendChild(tr);
 
-    [saleSelect, restockSelect].forEach(sel => {
-      const opt = document.createElement('option');
-      opt.value = item.id;
-      opt.textContent = `${item.name} (${item.remaining} left)`;
-      sel.appendChild(opt);
-    });
+    const opt = document.createElement('option');
+    opt.value = item.id;
+    opt.textContent = `${item.name} (${item.remaining} left)`;
+    saleFrag.appendChild(opt);
+    restockFrag.appendChild(opt.cloneNode(true));
   });
 
-  document.querySelectorAll('.del-btn').forEach(btn => {
-    btn.addEventListener('click', () => deleteSnack(Number(btn.dataset.id)));
-  });
+  tbody.innerHTML = '';
+  tbody.appendChild(tbodyFrag);
+  saleSelect.appendChild(saleFrag);
+  restockSelect.appendChild(restockFrag);
 
   updateProfitSummary(data);
-  renderSnackToggles();
-  renderEditPrices();
+  renderSnackToggles(data);
+  renderEditPrices(data);
 }
 
-function renderEditPrices() {
-  const data = load();
+function renderEditPrices(data) {
   const container = document.getElementById('editPrices');
-  container.innerHTML = '';
 
   if (data.length === 0) {
     container.innerHTML = '<p class="settings-hint">No snacks yet.</p>';
     return;
   }
 
+  const frag = document.createDocumentFragment();
   data.forEach(item => {
     const row = document.createElement('div');
     row.className = 'price-edit-row';
@@ -151,6 +154,7 @@ function renderEditPrices() {
     const nameSpan = document.createElement('span');
     nameSpan.className = 'price-edit-name';
     nameSpan.textContent = item.name;
+    row.appendChild(nameSpan);
 
     ['buyCost', 'margin'].forEach(field => {
       const input = document.createElement('input');
@@ -171,15 +175,16 @@ function renderEditPrices() {
       row.appendChild(input);
     });
 
-    row.insertBefore(nameSpan, row.firstChild);
-    container.appendChild(row);
+    frag.appendChild(row);
   });
+
+  container.innerHTML = '';
+  container.appendChild(frag);
 }
 
-function renderSnackToggles() {
-  const data = load();
+function renderSnackToggles(data) {
   const container = document.getElementById('snackToggles');
-  container.innerHTML = '';
+  const frag = document.createDocumentFragment();
   data.forEach(item => {
     const label = document.createElement('label');
     label.className = 'toggle-label snack-toggle';
@@ -207,12 +212,18 @@ function renderSnackToggles() {
     leverEl.appendChild(sliderSpan);
     label.appendChild(span);
     label.appendChild(leverEl);
-    container.appendChild(label);
+    frag.appendChild(label);
   });
+  container.innerHTML = '';
+  container.appendChild(frag);
 }
 
 function fmt(val) {
-  return val != null ? Number(val).toFixed(2) : '—';
+  return val != null ? Number(val).toFixed(2) + ' kr' : '—';
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 function addSnack() {
@@ -278,6 +289,7 @@ function logSale() {
   qtyEl.value = '';
   errEl.textContent = '';
   render();
+  renderChart();
 }
 
 function restock() {
@@ -304,9 +316,15 @@ function restock() {
 }
 
 function deleteSnack(id) {
-  const data = load().filter(s => s.id !== id);
-  save(data);
+  const data = load();
+  const removed = data.find(s => s.id === id);
+  if (removed) {
+    hiddenSnacks.delete(removed.name);
+    localStorage.setItem('hiddenSnacks', JSON.stringify([...hiddenSnacks]));
+  }
+  save(data.filter(s => s.id !== id));
   render();
+  renderChart();
 }
 
 let chartInstance = null;
@@ -316,29 +334,36 @@ const CHART_COLORS = ['#4299e1','#48bb78','#ed8936','#9f7aea','#f56565','#38b2ac
 
 function renderChart() {
   const history = loadHistory();
+  const isDaily = chartView === 'daily';
 
-  const snacks = [...new Set(history.map(h => h.snackName))].sort();
-  const allKeys = [...new Set(history.map(h =>
-    chartView === 'daily' ? h.date : h.date.slice(0, 7)
-  ))].sort();
-
+  const snackSet = new Set();
+  const keySet = new Set();
   const bySnack = {};
   history.forEach(({ date, snackName, qty }) => {
-    const key = chartView === 'daily' ? date : date.slice(0, 7);
+    const key = isDaily ? date : date.slice(0, 7);
+    snackSet.add(snackName);
+    keySet.add(key);
     if (!bySnack[snackName]) bySnack[snackName] = {};
     bySnack[snackName][key] = (bySnack[snackName][key] || 0) + qty;
   });
 
-  const datasets = snacks.filter(s => !hiddenSnacks.has(s)).map((snack, i) => ({
-    label: snack,
-    data: allKeys.map(k => bySnack[snack]?.[k] || 0),
-    borderColor: CHART_COLORS[i % CHART_COLORS.length],
-    backgroundColor: CHART_COLORS[i % CHART_COLORS.length] + '22',
-    borderWidth: 2,
-    pointRadius: 3,
-    tension: 0.3,
-    fill: false,
-  }));
+  const snacks = [...snackSet].sort();
+  const allKeys = [...keySet].sort();
+  const colorMap = new Map(snacks.map((s, i) => [s, CHART_COLORS[i % CHART_COLORS.length]]));
+
+  const datasets = snacks.filter(s => !hiddenSnacks.has(s)).map(snack => {
+    const color = colorMap.get(snack);
+    return {
+      label: snack,
+      data: allKeys.map(k => bySnack[snack]?.[k] || 0),
+      borderColor: color,
+      backgroundColor: color + '22',
+      borderWidth: 2,
+      pointRadius: 3,
+      tension: 0.3,
+      fill: false,
+    };
+  });
 
   const ctx = document.getElementById('purchaseChart').getContext('2d');
   if (chartInstance) chartInstance.destroy();
@@ -368,18 +393,7 @@ function exportToExcel() {
   const data = load();
   const history = loadHistory();
 
-  // Sheet 1: Inventory
-  const inventoryRows = [['Snack', 'Buy Cost', 'Sell Price', 'Margin %', 'Purchased', 'Remaining', 'Profit', 'Status']];
-  data.forEach(item => {
-    const sp = computeSellPrice(item);
-    const profit = (item.buyCost != null && sp != null)
-      ? Math.round(((sp * item.totalPurchased) - (item.buyCost * item.startingStock)) * 100) / 100
-      : '';
-    const { text } = statusLabel(item.remaining, item.startingStock);
-    inventoryRows.push([item.name, item.buyCost ?? '', sp != null ? Math.round(sp * 100) / 100 : '', item.margin ?? '', item.totalPurchased, item.remaining, profit, text]);
-  });
-
-  // Sheet 2: All sales (raw log)
+  // Sheet 1: All sales (raw log)
   const snackMap = Object.fromEntries(data.map(s => [s.name, s]));
   const historyRows = [['Date', 'Snack', 'Quantity', 'Profit']];
   [...history].sort((a, b) => a.date.localeCompare(b.date))
@@ -392,17 +406,23 @@ function exportToExcel() {
       historyRows.push([h.date, h.snackName, h.qty, profit]);
     });
 
-  // Sheet 3: Daily totals — one row per day, one column per snack
+  // Sheet 2: Daily totals — one row per day, one column per snack + Total + Profit
   const snackNames = [...new Set(history.map(h => h.snackName))].sort();
   const byDay = {};
+  const byDayProfit = {};
   history.forEach(({ date, snackName, qty }) => {
-    if (!byDay[date]) byDay[date] = {};
+    if (!byDay[date]) { byDay[date] = {}; byDayProfit[date] = 0; }
     byDay[date][snackName] = (byDay[date][snackName] || 0) + qty;
+    const item = snackMap[snackName];
+    const sp = item ? computeSellPrice(item) : null;
+    if (item?.buyCost != null && sp != null)
+      byDayProfit[date] = Math.round((byDayProfit[date] + (sp - item.buyCost) * qty) * 100) / 100;
   });
-  const dailyRows = [['Date', ...snackNames, 'Total']];
+  const dailyRows = [['Date', ...snackNames, 'Total', 'Profit']];
   Object.keys(byDay).sort().forEach(date => {
     const row = [date, ...snackNames.map(s => byDay[date][s] || 0)];
     row.push(snackNames.reduce((sum, s) => sum + (byDay[date][s] || 0), 0));
+    row.push(byDayProfit[date] ?? '');
     dailyRows.push(row);
   });
 
@@ -412,7 +432,18 @@ function exportToExcel() {
   XLSX.writeFile(wb, `vending-machine-${new Date().toISOString().slice(0,10)}.xlsx`);
 }
 
+document.getElementById('tableBody').addEventListener('click', e => {
+  const btn = e.target.closest('.del-btn');
+  if (btn) deleteSnack(Number(btn.dataset.id));
+});
+
 document.getElementById('exportBtn').addEventListener('click', exportToExcel);
+
+document.getElementById('resetAllBtn').addEventListener('click', () => {
+  if (!window.confirm('Reset everything? This will delete all snacks, sales history, and settings.')) return;
+  localStorage.clear();
+  location.reload();
+});
 document.getElementById('addSnackBtn').addEventListener('click', addSnack);
 document.getElementById('logSaleBtn').addEventListener('click', logSale);
 document.getElementById('restockBtn').addEventListener('click', restock);
@@ -462,7 +493,6 @@ function applyPriceChange(fields, confirmMsg) {
   });
   save(data);
   render();
-  renderEditPrices();
 }
 
 document.getElementById('applySellPrice').addEventListener('click', () =>
@@ -512,6 +542,4 @@ toggleChart.addEventListener('change', () => {
 });
 
 render();
-renderSnackToggles();
-renderEditPrices();
 renderChart();
