@@ -1,60 +1,101 @@
-# Vending Machine Tracker
+# CLAUDE.md
 
-## Project Goal
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-Build a web-based vending machine inventory tracker. The app lets staff log snack purchases, see how many of each item have been sold, and check how many remain in stock.
+## Running the App
 
-## Features to Build
+No build step. Two ways to run:
 
-1. **Inventory display** — show each snack with its name, total purchased, and remaining stock.
-2. **Data input form** — a form where the user can:
-   - Add a new snack (name + starting stock quantity).
-   - Record a purchase (select snack, enter quantity bought).
-3. **Live totals** — after each purchase entry, remaining stock updates automatically (starting stock − total purchased).
-4. **Persist data** — save inventory to a local JSON file or browser localStorage so data survives a page refresh.
-
-## Tech Stack
-
-- **Frontend:** Plain HTML + CSS + JavaScript (no framework needed) OR React if you prefer.
-- **Backend (optional):** A small Node.js/Express server with a JSON file as the database if you want server-side persistence.
-- **No external databases required** — keep it simple.
-
-## Data Model
-
-Each snack entry looks like this:
-
-```json
-{
-  "id": 1,
-  "name": "Chips",
-  "startingStock": 20,
-  "totalPurchased": 7,
-  "remaining": 13
-}
+**Direct file open (Windows):**
+```
+start index.html
 ```
 
-`remaining` is always computed as `startingStock - totalPurchased`.
-
-## UI Layout
-
-```
-┌─────────────────────────────────────────────┐
-│         Vending Machine Tracker             │
-├─────────────────────────────────────────────┤
-│  [Add Snack]  Name: ______  Stock: __  [+]  │
-│  [Log Sale]   Snack: v____  Qty:   __  [✓]  │
-├─────────────────────────────────────────────┤
-│  Snack      | Purchased | Remaining         │
-│  ---------- | --------- | ---------         │
-│  Chips      |     7     |    13             │
-│  Candy Bar  |     3     |    17             │
-│  Water      |    12     |     8             │
-└─────────────────────────────────────────────┘
+**macOS server (use `Shool-Mashin-Server/` folder instead):**
+```bash
+npm install
+npm start
+# opens at http://localhost:8080
 ```
 
-## Rules
+**Any machine (Python, pre-installed on macOS):**
+```bash
+python3 -m http.server 8080
+```
 
-- Remaining stock must never go below 0; show a warning if a sale would exceed stock.
-- All snack names must be unique.
-- Quantities must be positive integers.
-- Keep the code in a single `index.html` + `app.js` + `style.css` structure unless a backend is added.
+After any edit, reopen or hard-refresh the browser page to see changes.
+
+External dependencies loaded from CDN (internet required):
+- Chart.js — `cdn.jsdelivr.net`
+- SheetJS (xlsx) — `unpkg.com`
+
+## Architecture
+
+Three files, no framework, no build tool:
+
+- **`index.html`** — markup only; no inline scripts or styles
+- **`app.js`** — all logic; plain ES6, no modules
+- **`style.css`** — CSS Grid (`.panels`, `.profit-summary`), Flexbox (`.form-row`, `.settings-panel`)
+
+A sister folder **`Shool-Mashin-Server/`** contains the same three files plus `server.js` (Express) and `package.json` for macOS server deployment.
+
+## Data Layer
+
+Two `localStorage` keys:
+
+| Key | Shape | Purpose |
+|---|---|---|
+| `vendingMachineData` | `SnackItem[]` | Current inventory |
+| `vendingMachineHistory` | `HistoryEntry[]` | Per-sale log for chart + export |
+
+```js
+// SnackItem
+{ id, name, startingStock, totalPurchased, remaining, buyCost, margin }
+
+// HistoryEntry
+{ date: "YYYY-MM-DD", snackName: string, qty: number }
+```
+
+`remaining` is stored and kept in sync manually — not computed on read.
+`sellPrice` is always **computed**, never stored: `buyCost * (1 + margin / 100)`.
+On load, `migrateData()` converts any legacy `sellPrice` field to `margin`.
+
+A `migrateData()` call at startup converts any legacy `sellPrice` field into `margin`.
+
+Additional `localStorage` keys for UI state:
+- `showChart`, `showProfit`, `darkMode` — boolean toggles
+- `hiddenSnacks` — JSON array of snack names hidden from the chart
+- `overrideDate` — ISO date string used instead of today when logging sales
+
+## Render Cycle
+
+Every mutation ends with `render()`, which rebuilds the entire table body, both `<select>` dropdowns, the snack chart toggles, and the edit-prices list from scratch. `renderChart()` is called separately and destroys/recreates the Chart.js instance each time.
+
+## Key Features & Where They Live
+
+| Feature | Location |
+|---|---|
+| Settings slide-in panel | `#settingsPanel`, toggled via `openSettings()` / `closeSettings()` |
+| Dark mode | `body.dark` CSS class; toggled by `applyDark()` |
+| Profit summary cards | `.profit-summary`; updated by `updateProfitSummary(data)` |
+| Per-snack chart toggles | `renderSnackToggles()` → `hiddenSnacks` Set |
+| Bulk margin adjustment | `applyPriceChange(['margin'])` |
+| Sale date override | `getLogDate()` returns `overrideDate` or today |
+| Export to .xlsx | `exportToExcel()` using SheetJS — two sheets: Sales Log, Daily Totals |
+
+## Pricing Model
+
+- `buyCost` — unit cost to stock the item
+- `margin` — profit margin % entered by the user
+- `sellPrice` — computed as `buyCost × (1 + margin / 100)` via `computeSellPrice(item)`
+- **Cost** in profit summary = `buyCost × startingStock` (all stocked units, not just sold)
+- **Revenue** = `sellPrice × totalPurchased`
+- **Profit** = Revenue − Cost
+
+## Status Badge Logic (`statusLabel`)
+
+| Condition | Badge |
+|---|---|
+| `remaining === 0` | Empty (red) |
+| `remaining / startingStock ≤ 0.25` | Low (yellow) |
+| otherwise | OK (green) |
