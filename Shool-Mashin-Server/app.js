@@ -25,7 +25,10 @@ function computeSellPrice(item) {
 }
 
 function getLogDate() {
-  return overrideDate || new Date().toISOString().slice(0, 10);
+  if (overrideDate) return overrideDate;
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  return yesterday.toISOString().slice(0, 10);
 }
 
 function updateClock() {
@@ -105,7 +108,7 @@ function render() {
     const profitCls = itemProfit == null ? '' : itemProfit >= 0 ? 'profit-pos' : 'profit-neg';
 
     tr.innerHTML = `
-      <td>${item.name}</td>
+      <td>${escapeHtml(item.name)}</td>
       <td>${fmt(item.buyCost)}</td>
       <td>${sellPrice != null ? fmt(sellPrice) : '—'}</td>
       <td>${item.margin != null ? item.margin.toFixed(1) + '%' : '—'}</td>
@@ -215,6 +218,10 @@ function fmt(val) {
   return val != null ? Number(val).toFixed(2) : '—';
 }
 
+function escapeHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
 function addSnack() {
   const nameEl = document.getElementById('snackName');
   const stockEl = document.getElementById('snackStock');
@@ -278,6 +285,7 @@ function logSale() {
   qtyEl.value = '';
   errEl.textContent = '';
   render();
+  renderChart();
 }
 
 function restock() {
@@ -304,9 +312,15 @@ function restock() {
 }
 
 function deleteSnack(id) {
-  const data = load().filter(s => s.id !== id);
-  save(data);
+  const data = load();
+  const removed = data.find(s => s.id === id);
+  if (removed) {
+    hiddenSnacks.delete(removed.name);
+    localStorage.setItem('hiddenSnacks', JSON.stringify([...hiddenSnacks]));
+  }
+  save(data.filter(s => s.id !== id));
   render();
+  renderChart();
 }
 
 let chartInstance = null;
@@ -329,16 +343,18 @@ function renderChart() {
     bySnack[snackName][key] = (bySnack[snackName][key] || 0) + qty;
   });
 
-  const datasets = snacks.filter(s => !hiddenSnacks.has(s)).map((snack, i) => ({
+  const datasets = snacks.filter(s => !hiddenSnacks.has(s)).map(snack => {
+    const colorIdx = snacks.indexOf(snack) % CHART_COLORS.length;
+    return {
     label: snack,
     data: allKeys.map(k => bySnack[snack]?.[k] || 0),
-    borderColor: CHART_COLORS[i % CHART_COLORS.length],
-    backgroundColor: CHART_COLORS[i % CHART_COLORS.length] + '22',
+    borderColor: CHART_COLORS[colorIdx],
+    backgroundColor: CHART_COLORS[colorIdx] + '22',
     borderWidth: 2,
     pointRadius: 3,
     tension: 0.3,
     fill: false,
-  }));
+  };});
 
   const ctx = document.getElementById('purchaseChart').getContext('2d');
   if (chartInstance) chartInstance.destroy();
@@ -368,18 +384,7 @@ function exportToExcel() {
   const data = load();
   const history = loadHistory();
 
-  // Sheet 1: Inventory
-  const inventoryRows = [['Snack', 'Buy Cost', 'Sell Price', 'Margin %', 'Purchased', 'Remaining', 'Profit', 'Status']];
-  data.forEach(item => {
-    const sp = computeSellPrice(item);
-    const profit = (item.buyCost != null && sp != null)
-      ? Math.round(((sp * item.totalPurchased) - (item.buyCost * item.startingStock)) * 100) / 100
-      : '';
-    const { text } = statusLabel(item.remaining, item.startingStock);
-    inventoryRows.push([item.name, item.buyCost ?? '', sp != null ? Math.round(sp * 100) / 100 : '', item.margin ?? '', item.totalPurchased, item.remaining, profit, text]);
-  });
-
-  // Sheet 2: All sales (raw log)
+  // Sheet 1: All sales (raw log)
   const snackMap = Object.fromEntries(data.map(s => [s.name, s]));
   const historyRows = [['Date', 'Snack', 'Quantity', 'Profit']];
   [...history].sort((a, b) => a.date.localeCompare(b.date))
@@ -462,7 +467,6 @@ function applyPriceChange(fields, confirmMsg) {
   });
   save(data);
   render();
-  renderEditPrices();
 }
 
 document.getElementById('applySellPrice').addEventListener('click', () =>
@@ -512,6 +516,4 @@ toggleChart.addEventListener('change', () => {
 });
 
 render();
-renderSnackToggles();
-renderEditPrices();
 renderChart();
