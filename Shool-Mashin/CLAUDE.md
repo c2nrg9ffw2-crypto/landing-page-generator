@@ -1,60 +1,70 @@
-# Vending Machine Tracker
+# CLAUDE.md
 
-## Project Goal
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-Build a web-based vending machine inventory tracker. The app lets staff log snack purchases, see how many of each item have been sold, and check how many remain in stock.
+## Running the App
 
-## Features to Build
+No build step. Serve the directory with any static file server — opening `index.html` directly as a `file://` URL also works but some browsers restrict it.
 
-1. **Inventory display** — show each snack with its name, total purchased, and remaining stock.
-2. **Data input form** — a form where the user can:
-   - Add a new snack (name + starting stock quantity).
-   - Record a purchase (select snack, enter quantity bought).
-3. **Live totals** — after each purchase entry, remaining stock updates automatically (starting stock − total purchased).
-4. **Persist data** — save inventory to a local JSON file or browser localStorage so data survives a page refresh.
-
-## Tech Stack
-
-- **Frontend:** Plain HTML + CSS + JavaScript (no framework needed) OR React if you prefer.
-- **Backend (optional):** A small Node.js/Express server with a JSON file as the database if you want server-side persistence.
-- **No external databases required** — keep it simple.
-
-## Data Model
-
-Each snack entry looks like this:
-
-```json
-{
-  "id": 1,
-  "name": "Chips",
-  "startingStock": 20,
-  "totalPurchased": 7,
-  "remaining": 13
-}
+**macOS (Python, pre-installed):**
+```bash
+python3 -m http.server 8080
+# open http://localhost:8080
 ```
 
-`remaining` is always computed as `startingStock - totalPurchased`.
-
-## UI Layout
-
-```
-┌─────────────────────────────────────────────┐
-│         Vending Machine Tracker             │
-├─────────────────────────────────────────────┤
-│  [Add Snack]  Name: ______  Stock: __  [+]  │
-│  [Log Sale]   Snack: v____  Qty:   __  [✓]  │
-├─────────────────────────────────────────────┤
-│  Snack      | Purchased | Remaining         │
-│  ---------- | --------- | ---------         │
-│  Chips      |     7     |    13             │
-│  Candy Bar  |     3     |    17             │
-│  Water      |    12     |     8             │
-└─────────────────────────────────────────────┘
+**macOS/Windows (Node.js):**
+```bash
+npx serve .
 ```
 
-## Rules
+**Windows (file open):**
+```
+start index.html
+```
 
-- Remaining stock must never go below 0; show a warning if a sale would exceed stock.
-- All snack names must be unique.
-- Quantities must be positive integers.
-- Keep the code in a single `index.html` + `app.js` + `style.css` structure unless a backend is added.
+Chart.js is loaded from CDN (`cdn.jsdelivr.net`), so an internet connection is required for the chart to render.
+
+After any edit, reopen or hard-refresh the browser page to see changes.
+
+## Architecture
+
+Three files, no framework, no dependencies to install:
+
+- **`index.html`** — markup only; no inline scripts or styles
+- **`app.js`** — all logic; plain ES6, no modules
+- **`style.css`** — layout uses CSS Grid (`.panels`) and Flexbox (`.form-row`)
+
+### Data Layer
+
+Everything is persisted to `localStorage` under two keys:
+
+| Key | Shape | Purpose |
+|---|---|---|
+| `vendingMachineData` | `SnackItem[]` | Current inventory |
+| `vendingMachineHistory` | `HistoryEntry[]` | Per-sale log for the chart |
+
+```js
+// SnackItem
+{ id: number, name: string, startingStock: number, totalPurchased: number, remaining: number }
+
+// HistoryEntry
+{ date: "YYYY-MM-DD", snackName: string, qty: number }
+```
+
+`remaining` is stored alongside `startingStock` and `totalPurchased` — it is kept in sync manually, not computed on read. `restock` increments both `startingStock` and `remaining` so the Low/Empty status thresholds scale correctly.
+
+### Render Cycle
+
+Every mutation (`addSnack`, `logSale`, `restock`, `deleteSnack`) ends with `render()`. `render()` rebuilds the entire table body and repopulates both `<select>` dropdowns from scratch on each call. `renderChart()` is called separately and rebuilds the Chart.js instance (destroying the previous one via `chartInstance.destroy()`).
+
+### Status Badge Logic (`statusLabel`)
+
+| Condition | Badge |
+|---|---|
+| `remaining === 0` | Empty (red) |
+| `remaining / startingStock ≤ 0.25` | Low (yellow) |
+| otherwise | OK (green) |
+
+### ID Generation
+
+`id` is `Math.max(...data.map(s => s.id)) + 1`, or `1` if the array is empty. IDs are never reused after deletion.
