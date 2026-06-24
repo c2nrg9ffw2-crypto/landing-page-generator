@@ -30,9 +30,143 @@ h2 {
   letter-spacing: 0.05em;
 }
 
+.app-header {
+  position: relative;
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.settings-btn {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #fff;
+  border: 2px solid #cbd5e0;
+  border-radius: 8px;
+  padding: 0.35rem 0.6rem;
+  font-size: 1.1rem;
+  color: #4a5568;
+  line-height: 1;
+}
+
+.settings-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.25);
+  z-index: 99;
+}
+
+.settings-backdrop.open { display: block; }
+
+.settings-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 280px;
+  height: 100vh;
+  background: #fff;
+  box-shadow: -3px 0 16px rgba(0,0,0,0.12);
+  padding: 1.5rem;
+  z-index: 100;
+  overflow-y: auto;
+  transform: translateX(100%);
+  transition: transform 0.25s ease;
+}
+
+.settings-panel.open { transform: translateX(0); }
+
+.settings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+}
+
+.settings-header h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.close-btn {
+  background: transparent;
+  color: #a0aec0;
+  font-size: 0.9rem;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+}
+
+.close-btn:hover { background: #fed7d7; color: #c53030; opacity: 1; }
+
+.settings-divider {
+  border-top: 1px solid #edf2f7;
+  margin: 1rem 0;
+}
+
+.settings-section h3 {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #4a5568;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.75rem;
+}
+
+.toggle-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.lever {
+  position: relative;
+  display: inline-block;
+  width: 42px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.lever input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.lever-slider {
+  position: absolute;
+  inset: 0;
+  background: #a0aec0;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.lever-slider::before {
+  content: '';
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  left: 3px;
+  top: 3px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.lever input:checked + .lever-slider { background: #48bb78; }
+.lever input:checked + .lever-slider::before { transform: translateX(18px); }
+
+#toggleDark + .lever-slider { background: #a0aec0; }
+#toggleDark:checked + .lever-slider { background: #5a67d8; }
+
 .panels {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 1rem;
   margin-bottom: 1.5rem;
 }
@@ -152,18 +286,18 @@ tbody tr:hover { background: #f7fafc; }
 .del-btn:hover { background: #fed7d7; color: #c53030; opacity: 1; }
 
 .chart-card {
-  margin-top: 1.5rem;
+  margin-bottom: 1rem;
 }
 
 #purchaseChart {
-  max-height: 180px;
+  max-height: 160px;
 }
 
 .chart-header {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
 }
 
 .toggle-group {
@@ -184,3 +318,236 @@ tbody tr:hover { background: #f7fafc; }
   background: #4299e1;
   color: #fff;
 }
+
+.current-time {
+  font-size: 0.88rem;
+  color: #2d3748;
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 0.6rem;
+}
+
+.settings-label {
+  display: block;
+  font-size: 0.82rem;
+  color: #718096;
+  margin-bottom: 0.35rem;
+}
+
+.date-row {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.date-row input[type="date"] {
+  flex: 1;
+  padding: 0.45rem 0.6rem;
+  font-size: 0.88rem;
+}
+
+.reset-date-btn {
+  background: #edf2f7;
+  color: #4a5568;
+  font-size: 0.82rem;
+  padding: 0.45rem 0.7rem;
+  border-radius: 6px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.settings-hint {
+  font-size: 0.78rem;
+  color: #a0aec0;
+  margin-top: 0.35rem;
+}
+
+.price-edit-header {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 0.3rem;
+}
+
+.price-edit-header span:first-child { flex: 1; }
+
+.price-col-label {
+  width: 68px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #718096;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+
+.price-edit-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.4rem;
+}
+
+.price-edit-name {
+  flex: 1;
+  font-size: 0.88rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.price-input {
+  width: 68px;
+  flex: none;
+  padding: 0.35rem 0.4rem !important;
+  font-size: 0.82rem !important;
+  text-align: right;
+}
+
+.snack-toggles-section {
+  display: none;
+  margin-top: 0.1rem;
+}
+
+.snack-toggles-section.visible {
+  display: block;
+}
+
+.snack-toggle {
+  font-size: 0.88rem;
+  padding: 0.2rem 0;
+}
+
+/* ── Bulk price adjustment ──────────────────── */
+.bulk-btn {
+  flex: 1;
+  background: #edf2f7;
+  color: #2d3748;
+  font-size: 0.82rem;
+  padding: 0.4rem 0;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.bulk-btn:hover { background: #4299e1; color: #fff; opacity: 1; }
+
+body.dark .bulk-btn { background: #4a5568; color: #e2e8f0; }
+body.dark .bulk-btn:hover { background: #4299e1; color: #fff; }
+
+/* ── Profit summary ────────────────────────── */
+.profit-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.profit-card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.profit-card--highlight { border-top: 3px solid #4299e1; }
+
+.profit-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #718096;
+}
+
+.profit-value {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #2d3748;
+}
+
+.profit-pos { color: #276749; }
+.profit-neg { color: #c53030; }
+
+.export-btn {
+  background: #48bb78;
+  color: #fff;
+  font-size: 0.88rem;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+body.dark .export-btn { background: #276749; }
+
+/* ── Dark mode ─────────────────────────────── */
+body.dark {
+  background: #1a202c;
+  color: #e2e8f0;
+}
+
+body.dark h1 { color: #e2e8f0; }
+body.dark h2 { color: #a0aec0; }
+
+body.dark .card {
+  background: #2d3748;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.4);
+}
+
+body.dark input,
+body.dark select {
+  background: #1a202c;
+  border-color: #4a5568;
+  color: #e2e8f0;
+}
+
+body.dark input:focus,
+body.dark select:focus { border-color: #4299e1; }
+
+body.dark table { background: #2d3748; border: 1.5px solid #63b3ed; }
+body.dark thead { background: #171e2a; }
+body.dark td { border-top-color: #4a5568; }
+body.dark tbody tr:hover { background: #374151; }
+body.dark .empty { color: #718096; }
+
+body.dark .settings-panel { background: #2d3748; }
+body.dark .settings-divider { border-top-color: #4a5568; }
+body.dark .settings-header h2,
+body.dark .toggle-label,
+body.dark .price-edit-name,
+body.dark .current-time { color: #e2e8f0; }
+body.dark .settings-section h3,
+body.dark .settings-label,
+body.dark .price-col-label { color: #a0aec0; }
+
+body.dark .settings-btn {
+  background: #2d3748;
+  border-color: #4a5568;
+  color: #e2e8f0;
+}
+
+body.dark .settings-backdrop { background: rgba(0,0,0,0.55); }
+
+body.dark .toggle-btn {
+  background: #4a5568;
+  color: #e2e8f0;
+}
+
+body.dark .toggle-btn.active {
+  background: #4299e1;
+  color: #fff;
+}
+
+body.dark .reset-date-btn {
+  background: #4a5568;
+  color: #e2e8f0;
+}
+
+body.dark .del-btn { color: #718096; }
+
+body.dark .profit-card {
+  background: #2d3748;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.4);
+}
+
+body.dark .profit-value { color: #e2e8f0; }

@@ -7,19 +7,98 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <!-- Settings Panel -->
+  <div id="settingsPanel" class="settings-panel">
+    <div class="settings-header">
+      <h2>Settings</h2>
+      <button id="closeSettings" class="close-btn">✕</button>
+    </div>
+    <div class="settings-section">
+      <label class="toggle-label">
+        <span>Dark mode</span>
+        <span class="lever"><input type="checkbox" id="toggleDark" /><span class="lever-slider"></span></span>
+      </label>
+      <label class="toggle-label" style="margin-top:0.5rem;">
+        <span>Show profit summary</span>
+        <span class="lever"><input type="checkbox" id="toggleProfit" checked /><span class="lever-slider"></span></span>
+      </label>
+      <label class="toggle-label" style="margin-top:0.5rem;">
+        <span>Show chart</span>
+        <span class="lever"><input type="checkbox" id="toggleChart" checked /><span class="lever-slider"></span></span>
+      </label>
+      <div id="snackTogglesSection" class="snack-toggles-section">
+        <p class="settings-label" style="margin-top:0.75rem;">Snacks on chart:</p>
+        <div id="snackToggles"></div>
+      </div>
+    </div>
+    <div class="settings-divider"></div>
+    <div class="settings-section">
+      <h3>Sale Date</h3>
+      <p id="currentDateTime" class="current-time"></p>
+      <label class="settings-label">Log sales as:</label>
+      <div class="date-row">
+        <input type="date" id="overrideDate" />
+        <button id="resetDate" class="reset-date-btn">Today</button>
+      </div>
+      <p class="settings-hint">Change to backdate a sale</p>
+    </div>
+    <div class="settings-divider"></div>
+    <div class="settings-section">
+      <h3>Bulk Price Adjustment</h3>
+      <div class="date-row">
+        <input type="number" id="priceChangePct" placeholder="%" step="0.1" style="text-align:right;" />
+        <span class="price-col-label" style="align-self:center;">%</span>
+      </div>
+      <p class="settings-hint">Positive = increase, negative = decrease</p>
+      <div style="display:flex; gap:0.4rem; margin-top:0.5rem;">
+        <button class="bulk-btn" id="applySellPrice">Apply to all</button>
+      </div>
+    </div>
+    <div class="settings-divider"></div>
+    <div class="settings-section">
+      <h3>Edit Prices</h3>
+      <div class="price-edit-header">
+        <span></span><span class="price-col-label">Buy</span><span class="price-col-label">Margin%</span>
+      </div>
+      <div id="editPrices"></div>
+    </div>
+    <div class="settings-divider"></div>
+    <div class="settings-section">
+      <h3>Add Snack</h3>
+      <div class="form-row">
+        <input id="snackName" type="text" placeholder="Snack name" />
+        <input id="snackStock" type="number" placeholder="Starting stock" min="1" />
+        <input id="snackBuyCost" type="number" placeholder="Buy cost" min="0" step="0.01" />
+        <input id="snackSellPrice" type="number" placeholder="Margin %" step="0.1" />
+        <button id="addSnackBtn">+ Add</button>
+      </div>
+      <p id="addError" class="error"></p>
+    </div>
+    <div class="settings-divider"></div>
+    <div class="settings-section">
+      <button id="exportBtn" class="export-btn" style="width:100%;">⬇ Export sales to .xlsx</button>
+    </div>
+  </div>
+  <div id="settingsBackdrop" class="settings-backdrop"></div>
+
   <div class="container">
-    <h1>🥤 Vending Machine Tracker</h1>
+    <div class="app-header">
+      <h1>Vending Machine Tracker</h1>
+      <button id="settingsBtn" class="settings-btn" title="Settings">⚙</button>
+    </div>
 
     <div class="panels">
-      <!-- Add Snack -->
+      <!-- Restock -->
       <div class="card">
-        <h2>Add Snack</h2>
+        <h2>Refill Snacks</h2>
         <div class="form-row">
-          <input id="snackName" type="text" placeholder="Snack name" />
-          <input id="snackStock" type="number" placeholder="Starting stock" min="1" />
-          <button id="addSnackBtn">+ Add</button>
+          <select id="restockSnack">
+            <option value="">— Select snack —</option>
+          </select>
+          <input id="restockQty" type="number" placeholder="Add quantity" min="1" />
+          <button id="restockBtn">↑ Refill</button>
         </div>
-        <p id="addError" class="error"></p>
+        <p id="restockError" class="error"></p>
       </div>
 
       <!-- Log Sale -->
@@ -30,23 +109,38 @@
             <option value="">— Select snack —</option>
           </select>
           <input id="saleQty" type="number" placeholder="Quantity" min="1" />
-          <button id="logSaleBtn">✓ Log</button>
+          <button id="logSaleBtn">✓ Log Sale</button>
         </div>
         <p id="saleError" class="error"></p>
       </div>
+    </div>
 
-      <!-- Restock -->
-      <div class="card">
-        <h2>Restock</h2>
-        <div class="form-row">
-          <select id="restockSnack">
-            <option value="">— Select snack —</option>
-          </select>
-          <input id="restockQty" type="number" placeholder="Add quantity" min="1" />
-          <button id="restockBtn">↑ Restock</button>
-        </div>
-        <p id="restockError" class="error"></p>
+    <!-- Profit Summary -->
+    <div class="profit-summary">
+      <div class="profit-card">
+        <span class="profit-label">Revenue</span>
+        <span class="profit-value" id="statRevenue">—</span>
       </div>
+      <div class="profit-card">
+        <span class="profit-label">Cost</span>
+        <span class="profit-value" id="statCost">—</span>
+      </div>
+      <div class="profit-card profit-card--highlight">
+        <span class="profit-label">Profit</span>
+        <span class="profit-value" id="statProfit">—</span>
+      </div>
+    </div>
+
+    <!-- Chart -->
+    <div class="card chart-card">
+      <div class="chart-header">
+        <h2>Purchases</h2>
+        <div class="toggle-group">
+          <button id="viewDaily" class="toggle-btn active">Day</button>
+          <button id="viewMonthly" class="toggle-btn">Month</button>
+        </div>
+      </div>
+      <canvas id="purchaseChart"></canvas>
     </div>
 
     <!-- Inventory Table -->
@@ -54,33 +148,27 @@
       <thead>
         <tr>
           <th>Snack</th>
+          <th>Buy Cost</th>
+          <th>Sell Price</th>
+          <th>Margin %</th>
           <th>Purchased</th>
           <th>Remaining</th>
+          <th>Profit</th>
           <th>Status</th>
           <th></th>
         </tr>
       </thead>
       <tbody id="tableBody">
         <tr id="emptyRow">
-          <td colspan="5" class="empty">No snacks added yet.</td>
+          <td colspan="9" class="empty">No snacks added yet.</td>
         </tr>
       </tbody>
     </table>
-  <!-- Chart -->
-  <div class="card chart-card">
-    <div class="chart-header">
-      <h2>Purchases Over Time</h2>
-      <div class="toggle-group">
-        <button id="viewDaily" class="toggle-btn active">Daily</button>
-        <button id="viewMonthly" class="toggle-btn">Monthly</button>
-      </div>
-    </div>
-    <canvas id="purchaseChart"></canvas>
-  </div>
 
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
