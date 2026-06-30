@@ -1,0 +1,113 @@
+@page "/settings"
+@inject NavigationManager Nav
+
+<PageTitle>Settings - Command Hub</PageTitle>
+
+<div class="pch-home">
+    <div class="home-header">
+        <button class="back-btn" @onclick="GoBack">
+            <svg viewBox="0 0 16 16" fill="currentColor" width="14" height="14">
+                <path fill-rule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"/>
+            </svg>
+            Back
+        </button>
+        <h1 class="home-title" style="margin-top: 1rem;">Settings</h1>
+        <p class="home-date">Configure your Command Hub</p>
+    </div>
+
+    <div class="home-grid">
+        <div class="home-card settings-card">
+            <div class="home-card-icon emails-icon">
+                <svg viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1H2zm13 2.383-4.708 2.825L15 11.105V5.383zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741zM1 11.105l4.708-2.897L1 5.383v5.722z"/>
+                </svg>
+            </div>
+            <div class="home-card-label">Email / IMAP</div>
+            <p class="home-card-desc">Server, port, and app password for inbox sync</p>
+            <span class="settings-tag">appsettings.json</span>
+        </div>
+
+        <div class="home-card settings-card">
+            <div class="home-card-icon news-icon">
+                <svg viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M0 2.5A1.5 1.5 0 0 1 1.5 1h11A1.5 1.5 0 0 1 14 2.5v10.528c0 .3-.05.654-.238.972h.738a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 1 1 0v9a1.5 1.5 0 0 1-1.5 1.5H1.497A1.497 1.497 0 0 1 0 13.5v-11zM1 13.5c0 .274.22.5.497.5H13.5a.5.5 0 0 0 .5-.5V2.5a.5.5 0 0 0-.5-.5h-11a.5.5 0 0 0-.5.5v11z"/>
+                    <path d="M2 3h4v4H2V3zm0 5h4v1H2V8zm0 2h4v1H2v-1zm0 2h4v1H2v-1zm5-9h4v1H7V3zm0 2h4v1H7V5zm0 2h4v1H7V7zm0 2h4v1H7V9zm0 2h4v1H7v-1zm0 2h4v1H7v-1z"/>
+                </svg>
+            </div>
+            <div class="home-card-label">RSS Feeds</div>
+            <p class="home-card-desc">Feed URLs and category labels for news sync</p>
+            <span class="settings-tag">appsettings.json</span>
+        </div>
+
+        <div class="home-card settings-card">
+            <div class="home-card-icon notif-icon">
+                <svg viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2zm.995-14.901a1 1 0 1 0-1.99 0A5.002 5.002 0 0 0 3 6c0 1.098-.5 6-2 7h14c-1.5-1-2-5.902-2-7 0-2.42-1.72-4.44-4.005-4.901z"/>
+                </svg>
+            </div>
+            <div class="home-card-label">Notifications</div>
+            <p class="home-card-desc">Toast alerts for deadlines and new emails</p>
+            <span class="settings-tag">Background service</span>
+        </div>
+
+        <div class="home-card settings-card">
+            <div class="home-card-icon system-icon">
+                <svg viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492zM5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0z"/>
+                    <path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52l-.094-.319zm-2.633.283c.246-.835 1.428-.835 1.674 0l.094.319a1.873 1.873 0 0 0 2.693 1.115l.291-.16c.764-.415 1.6.42 1.184 1.185l-.159.292a1.873 1.873 0 0 0 1.116 2.692l.318.094c.835.246.835 1.428 0 1.674l-.319.094a1.873 1.873 0 0 0-1.115 2.693l.16.291c.415.764-.42 1.6-1.185 1.184l-.291-.159a1.873 1.873 0 0 0-2.693 1.116l-.094.318c-.246.835-1.428.835-1.674 0l-.094-.319a1.873 1.873 0 0 0-2.692-1.115l-.292.16c-.764.415-1.6-.42-1.184-1.185l.159-.291A1.873 1.873 0 0 0 1.945 8.93l-.319-.094c-.835-.246-.835-1.428 0-1.674l.319-.094A1.873 1.873 0 0 0 3.06 4.375l-.16-.292c-.415-.764.42-1.6 1.185-1.184l.292.159a1.873 1.873 0 0 0 2.692-1.115l.094-.319z"/>
+                </svg>
+            </div>
+            <div class="home-card-label">System</div>
+            <p class="home-card-desc">Database path, API URL, and allowed origins</p>
+            <span class="settings-tag">appsettings.json</span>
+        </div>
+    </div>
+</div>
+
+@code {
+    private void GoBack() => Nav.NavigateTo("/");
+}
+
+<style>
+    .back-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: none;
+        border: 1px solid #3e3e4e;
+        color: #a1a1aa;
+        padding: 0.35rem 0.75rem;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        font-family: 'Outfit', sans-serif;
+        cursor: pointer;
+        transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+    }
+    .back-btn:hover {
+        color: #fafafa;
+        border-color: #71717a;
+        background-color: rgba(255,255,255,0.05);
+    }
+    .back-btn:active { transform: translateY(1px); }
+
+    .settings-card { cursor: default; }
+    .settings-card:hover { border-color: #3e3e4e; transform: none; }
+
+    .settings-tag {
+        display: inline-block;
+        margin-top: 0.75rem;
+        font-size: 0.68rem;
+        font-weight: 500;
+        color: #71717a;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid #3e3e4e;
+        border-radius: 4px;
+        padding: 0.2em 0.5em;
+        font-family: 'Outfit', monospace;
+        letter-spacing: 0.02em;
+    }
+
+    .notif-icon { background: rgba(167,139,250,0.14); color: #a78bfa; }
+    .system-icon { background: rgba(161,161,170,0.14); color: #a1a1aa; }
+</style>
