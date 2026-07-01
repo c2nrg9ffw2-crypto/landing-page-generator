@@ -57,13 +57,12 @@ Ask Claude Code to "continue from the build plan" each morning.
 ## Day 4 — Booking Connector
 **Goal:** App detects bookings and converts them to tasks
 
-- [ ] Decide: parse booking emails OR connect to platform API
-- [ ] Implement `BookingConnector`
-- [ ] Extract: booking ID, dates, location, platform
-- [ ] Create Booking entity + migration
-- [ ] Convert bookings → Tasks automatically
-- [ ] Create `BookingsPage.razor`
-- [ ] Show upcoming bookings sorted by date
+- [x] Decide: parse booking emails OR connect to platform API — parse Zoezi/MUDO gym confirmation emails; detection + parsing added to `EmailConnector` (no separate `BookingConnector` class — it reuses the same IMAP sync pass)
+- [x] Extract: class name, start datetime, platform — regex on the subject ("&lt;class&gt; startar yyyy-MM-dd HH:mm. Välkommen!"), falling back to the body's "Din bokning/lektion: … Startar: …" when the subject doesn't match cleanly
+- [x] Create Booking entity + migration — added `Platform` column (`AddBookingPlatform` migration); `StartTime`/`EndTime`/`Source`/`ExternalId` already existed
+- [x] Convert bookings → Tasks automatically — auto-creates "Attend &lt;ClassName&gt;" task (Category=Personal, DueDate=StartTime), deduplicated by Message-ID like the Day 3 email tasks
+- [x] Create `BookingsPage.razor` — new page + `BookingsController`/`BookingApiClient`, nav link added
+- [x] Show upcoming bookings sorted by date — sorted by `StartTime` ascending server-side, filtered to upcoming client-side
 
 **Agent to use:** Connector → Backend → Frontend
 
@@ -79,7 +78,7 @@ Ask Claude Code to "continue from the build plan" each morning.
 - [ ] Add Windows Toast Notifications (WinRT)
 - [ ] Trigger notifications for: new task, deadline today, daily news summary
 - [ ] Add `NotificationsPage.razor` — notification history
-- [ ] Create `SettingsPage.razor` — email config, feeds toggle, notification prefs
+- [x] Create `SettingsPage.razor` — dark/light mode toggle (cookie-persisted); IMAP email form (host/port/SSL/user/password); RSS feed list with enable/disable/add/delete stored in `rss_feeds` table; notification toggles (new task, deadline today, daily news summary + hour) stored in `app_settings` table
 - [ ] Final test: full flow end to end
 - [ ] Deploy locally on Beelink (set app to start with Windows)
 

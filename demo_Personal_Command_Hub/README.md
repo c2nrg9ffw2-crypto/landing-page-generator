@@ -71,13 +71,19 @@ powershell   dotnet run --project PCH.Api
 
 Open the Blazor app in your browser and log in
 
+For a public demo via Tailscale Funnel, use the included scripts from the repo root:
+
+
+powershell   .\start-demo.ps1   # launches Api, App, and Tailscale Funnel in separate windows
+   .\stop-demo.ps1    # kills all three cleanly
+
 
 Full setup instructions, including exact downloads and commands, are in docs/SETUP.md.
 
 
 Project status
 
-ModuleStatusTasks✅ DoneEmail connector (Outlook)✅ DoneNews connector✅ DoneLocal AI classify/summarize✅ DoneNotifications✅ DoneAuth & security hardening✅ DoneBooking connector (fitness classes)⏸ Paused — needs a sample confirmation emailSchool timetable connector (WebUntis)⏸ Paused — no live data until school resumesSettings page UI🔲 Not startedBackground auto-sync🔲 Not startedDeployment / auto-start on boot🔲 Not started
+ModuleStatusTasks✅ DoneEmail connector (Outlook)✅ DoneNews connector✅ DoneLocal AI classify/summarize✅ DoneNotifications✅ DoneAuth & security hardening✅ DoneSettings page UI✅ Done — dark/light mode toggle (cookie-persisted), IMAP email config, RSS feed list (add/toggle/delete), notification preferencesBooking connector (fitness classes)⏸ Paused — needs a sample confirmation emailSchool timetable connector (WebUntis)⏸ Paused — no live data until school resumesBackground auto-sync🔲 Not startedDeployment / auto-start on boot🔲 Not started
 
 See docs/BUILD_PLAN.md for the detailed day-by-day breakdown.
 

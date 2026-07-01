@@ -24,6 +24,9 @@ public class Booking
     /// <summary>Where this booking was ingested from.</summary>
     public ItemSource Source { get; set; } = ItemSource.Booking;
 
+    /// <summary>Name of the booking platform that sent the confirmation email (e.g. "Zoezi"), or null if unknown/manual.</summary>
+    public string? Platform { get; set; }
+
     /// <summary>
     /// Stable external identifier (e.g. confirmation number or email message-id)
     /// used to deduplicate.

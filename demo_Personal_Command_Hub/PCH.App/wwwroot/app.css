@@ -12,6 +12,7 @@
   --pch-accent-dim:     rgba(16, 185, 129, 0.12);
   --pch-danger:         #f87171;
   --pch-warning:        #fbbf24;
+  --pch-nav-hover:      rgba(255,255,255,0.07);
 
   /* Bootstrap dark-mode overrides */
   --bs-body-bg:               #16161c;
@@ -28,6 +29,27 @@
   --bs-card-border-color:     #3f3f46;
   --bs-primary:               #10b981;
   --bs-primary-rgb:           16, 185, 129;
+}
+
+/* ── Light mode ────────────────────────────────────────────────────── */
+html[data-bs-theme="light"] {
+  --pch-bg:             #f4f4f8;
+  --pch-surface:        #ffffff;
+  --pch-elevated:       #e8e8f0;
+  --pch-border:         #d4d4dc;
+  --pch-text:           #0a0a0a;
+  --pch-text-secondary: #3f3f46;
+  --pch-text-muted:     #71717a;
+  --pch-nav-hover:      rgba(0,0,0,0.06);
+  --bs-body-bg:         #f4f4f8;
+  --bs-body-color:      #0a0a0a;
+  --bs-border-color:    #d4d4dc;
+  --bs-secondary-bg:    #ffffff;
+  --bs-tertiary-bg:     #e8e8f0;
+  --bs-secondary-color: rgba(10,10,10,0.6);
+  --bs-heading-color:   #0a0a0a;
+  --bs-card-bg:         #ffffff;
+  --bs-card-border-color: #d4d4dc;
 }
 
 /* ── Base ──────────────────────────────────────────────────────────── */

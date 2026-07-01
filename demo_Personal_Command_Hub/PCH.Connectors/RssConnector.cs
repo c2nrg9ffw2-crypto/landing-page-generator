@@ -10,18 +10,11 @@ using PCH.Data;
 namespace PCH.Connectors;
 
 /// <summary>
-/// Fetches the top 5 articles from each configured RSS feed and persists them
-/// to the <c>news_items</c> table, deduplicating by URL.
+/// Fetches the top 5 articles from each enabled RSS feed (stored in <c>rss_feeds</c>)
+/// and persists them to <c>news_items</c>, deduplicating by URL.
 /// </summary>
 public partial class RssConnector : IConnector
 {
-    private static readonly (string Url, string Category)[] Feeds =
-    [
-        ("https://www.svt.se/nyheter/rss.xml",             "Sweden"),
-        ("https://www.tagesschau.de/xml/rss2/",            "Germany"),
-        ("https://www.sciencedaily.com/rss/top/science.xml","Science"),
-    ];
-
     private readonly HttpClient _http;
     private readonly PchDbContext _db;
     private readonly ILogger<RssConnector> _logger;
@@ -38,18 +31,22 @@ public partial class RssConnector : IConnector
     }
 
     /// <summary>
-    /// Fetches all configured feeds sequentially and persists new items.
+    /// Fetches all enabled feeds from the database sequentially and persists new items.
     /// A feed that fails is logged and skipped so the others still complete.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Total number of new articles stored across all feeds.</returns>
     public async Task<int> FetchAsync(CancellationToken cancellationToken = default)
     {
+        var feeds = await _db.RssFeeds
+            .Where(f => f.Enabled)
+            .ToListAsync(cancellationToken);
+
         var total = 0;
-        foreach (var (url, category) in Feeds)
+        foreach (var feed in feeds)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            total += await FetchFeedAsync(url, category, cancellationToken);
+            total += await FetchFeedAsync(feed.Url, feed.Category, cancellationToken);
         }
         _logger.LogInformation("RSS sync complete: {Total} new article(s) ingested", total);
         return total;

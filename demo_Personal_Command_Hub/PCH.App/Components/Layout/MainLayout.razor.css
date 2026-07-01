@@ -7,13 +7,13 @@
 
 main {
     flex: 1;
-    background-color: #16161c;
+    background-color: var(--pch-bg);
     min-width: 0;
 }
 
 .sidebar {
-    background-color: #1f1f27;
-    border-right: 1px solid #3e3e4e;
+    background-color: var(--pch-surface);
+    border-right: 1px solid var(--pch-border);
 }
 
 article.content {

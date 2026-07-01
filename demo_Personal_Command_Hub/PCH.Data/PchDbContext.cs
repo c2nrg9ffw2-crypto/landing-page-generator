@@ -25,6 +25,12 @@ public class PchDbContext : DbContext
     /// <summary>Emails fetched from the IMAP inbox.</summary>
     public DbSet<Email> Emails => Set<Email>();
 
+    /// <summary>Configurable RSS feed sources.</summary>
+    public DbSet<RssFeed> RssFeeds => Set<RssFeed>();
+
+    /// <summary>Single-row app settings (IMAP config, notification prefs).</summary>
+    public DbSet<AppSettings> AppSettings => Set<AppSettings>();
+
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -50,6 +56,7 @@ public class PchDbContext : DbContext
             e.ToTable("bookings");
             e.HasKey(b => b.Id);
             e.Property(b => b.Title).IsRequired().HasMaxLength(256);
+            e.Property(b => b.Platform).HasMaxLength(64);
             e.HasIndex(b => b.ExternalId);
         });
 
@@ -62,6 +69,20 @@ public class PchDbContext : DbContext
             e.Property(em => em.Sender).IsRequired().HasMaxLength(512);
             e.Property(em => em.BodyPreview).IsRequired();
             e.HasIndex(em => em.MessageId).IsUnique();
+        });
+
+        modelBuilder.Entity<RssFeed>(e =>
+        {
+            e.ToTable("rss_feeds");
+            e.HasKey(f => f.Id);
+            e.Property(f => f.Url).IsRequired();
+            e.Property(f => f.Category).IsRequired().HasMaxLength(64);
+        });
+
+        modelBuilder.Entity<AppSettings>(e =>
+        {
+            e.ToTable("app_settings");
+            e.HasKey(a => a.Id);
         });
 
         base.OnModelCreating(modelBuilder);

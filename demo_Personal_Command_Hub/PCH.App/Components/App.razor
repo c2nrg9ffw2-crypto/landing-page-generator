@@ -1,5 +1,10 @@
-﻿<!DOCTYPE html>
-<html lang="en" data-bs-theme="dark">
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    var theme = HttpContextAccessor.HttpContext?.Request.Cookies["pch-theme"] ?? "dark";
+    var bsTheme = theme == "light" ? "light" : "dark";
+}
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="@bsTheme">
 
 <head>
     <meta charset="utf-8" />
@@ -17,6 +22,7 @@
 
 <body>
     <Routes />
+    <script src="theme.js"></script>
     <script src="_framework/blazor.web.js"></script>
 </body>
 

@@ -21,6 +21,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.WebHost.ConfigureKestrel(opts => opts.AddServerHeader = false);
 
 // Add services to the container.
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
@@ -59,9 +60,11 @@ builder.Services.AddRateLimiter(opts =>
 // Base URL comes from config (ApiBaseUrl) so HTTP vs HTTPS is not hardcoded.
 // Server-side Blazor calls the API directly on the same machine — no TLS needed for localhost.
 var apiBaseUrl = builder.Configuration["ApiBaseUrl"] ?? "http://localhost:5292/";
-builder.Services.AddHttpClient<TaskApiClient>(c =>  c.BaseAddress = new Uri(apiBaseUrl));
-builder.Services.AddHttpClient<EmailApiClient>(c => c.BaseAddress = new Uri(apiBaseUrl));
-builder.Services.AddHttpClient<NewsApiClient>(c =>  c.BaseAddress = new Uri(apiBaseUrl));
+builder.Services.AddHttpClient<TaskApiClient>(c =>     c.BaseAddress = new Uri(apiBaseUrl));
+builder.Services.AddHttpClient<EmailApiClient>(c =>    c.BaseAddress = new Uri(apiBaseUrl));
+builder.Services.AddHttpClient<NewsApiClient>(c =>     c.BaseAddress = new Uri(apiBaseUrl));
+builder.Services.AddHttpClient<SettingsApiClient>(c => c.BaseAddress = new Uri(apiBaseUrl));
+builder.Services.AddHttpClient<BookingApiClient>(c =>  c.BaseAddress = new Uri(apiBaseUrl));
 
 var app = builder.Build();
 

@@ -21,3 +21,6 @@ secrets.json
 .venv/
 __pycache__/
 *.pyc
+
+# Runtime artifacts from start-demo.ps1 / stop-demo.ps1
+.demo-pids.txt

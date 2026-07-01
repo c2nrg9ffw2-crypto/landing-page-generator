@@ -1,81 +1,469 @@
 @page "/settings"
+@rendermode InteractiveServer
 @inject NavigationManager Nav
+@inject IJSRuntime JS
+@inject SettingsApiClient SettingsApi
 
-<PageTitle>Settings - Command Hub</PageTitle>
+<PageTitle>Settings — Command Hub</PageTitle>
 
-<div class="pch-home">
-    <div class="home-header">
+<div class="pch-settings">
+    <div class="settings-header">
         <button class="back-btn" @onclick="GoBack">
             <svg viewBox="0 0 16 16" fill="currentColor" width="14" height="14">
                 <path fill-rule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"/>
             </svg>
-            Back
+            Home
         </button>
-        <h1 class="home-title" style="margin-top: 1rem;">Settings</h1>
-        <p class="home-date">Configure your Command Hub</p>
+        <h1 class="settings-title">Settings</h1>
+        <p class="settings-sub">Configure your Command Hub</p>
     </div>
 
-    <div class="home-grid">
-        <div class="home-card settings-card">
-            <div class="home-card-icon emails-icon">
-                <svg viewBox="0 0 16 16" fill="currentColor">
-                    <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1H2zm13 2.383-4.708 2.825L15 11.105V5.383zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741zM1 11.105l4.708-2.897L1 5.383v5.722z"/>
-                </svg>
+    <div class="settings-sections">
+
+        <!-- ── Appearance ───────────────────────────────────────────────── -->
+        <div class="settings-section">
+            <div class="section-header">
+                <div class="section-icon appearance-icon">
+                    @if (_isDark)
+                    {
+                        <svg viewBox="0 0 16 16" fill="currentColor" width="18" height="18">
+                            <path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z"/>
+                        </svg>
+                    }
+                    else
+                    {
+                        <svg viewBox="0 0 16 16" fill="currentColor" width="18" height="18">
+                            <path d="M8 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zm0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13zm8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5zM3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8zm10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0zm-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707zM4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708z"/>
+                        </svg>
+                    }
+                </div>
+                <span class="section-title">Appearance</span>
             </div>
-            <div class="home-card-label">Email / IMAP</div>
-            <p class="home-card-desc">Server, port, and app password for inbox sync</p>
-            <span class="settings-tag">appsettings.json</span>
+            <div class="section-body">
+                <div class="setting-row">
+                    <div>
+                        <div class="setting-label">Theme</div>
+                        <div class="setting-desc">Switch between dark and light mode</div>
+                    </div>
+                    <div class="theme-toggle-row">
+                        <span class="theme-label">@(_isDark ? "Dark" : "Light")</span>
+                        <button class="theme-toggle @(_isDark ? "is-dark" : "is-light")" @onclick="ToggleTheme" aria-label="Toggle theme">
+                            <span class="theme-toggle-thumb"></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <div class="home-card settings-card">
-            <div class="home-card-icon news-icon">
-                <svg viewBox="0 0 16 16" fill="currentColor">
-                    <path d="M0 2.5A1.5 1.5 0 0 1 1.5 1h11A1.5 1.5 0 0 1 14 2.5v10.528c0 .3-.05.654-.238.972h.738a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 1 1 0v9a1.5 1.5 0 0 1-1.5 1.5H1.497A1.497 1.497 0 0 1 0 13.5v-11zM1 13.5c0 .274.22.5.497.5H13.5a.5.5 0 0 0 .5-.5V2.5a.5.5 0 0 0-.5-.5h-11a.5.5 0 0 0-.5.5v11z"/>
-                    <path d="M2 3h4v4H2V3zm0 5h4v1H2V8zm0 2h4v1H2v-1zm0 2h4v1H2v-1zm5-9h4v1H7V3zm0 2h4v1H7V5zm0 2h4v1H7V7zm0 2h4v1H7V9zm0 2h4v1H7v-1zm0 2h4v1H7v-1z"/>
-                </svg>
+        <!-- ── Email / IMAP ──────────────────────────────────────────────── -->
+        <div class="settings-section">
+            <div class="section-header">
+                <div class="section-icon email-icon">
+                    <svg viewBox="0 0 16 16" fill="currentColor" width="18" height="18">
+                        <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1H2zm13 2.383-4.708 2.825L15 11.105V5.383zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741zM1 11.105l4.708-2.897L1 5.383v5.722z"/>
+                    </svg>
+                </div>
+                <span class="section-title">Email / IMAP</span>
             </div>
-            <div class="home-card-label">RSS Feeds</div>
-            <p class="home-card-desc">Feed URLs and category labels for news sync</p>
-            <span class="settings-tag">appsettings.json</span>
+            <div class="section-body">
+                @if (_emailLoading)
+                {
+                    <div class="loading-row"><div class="spinner-border spinner-border-sm me-2"></div> Loading…</div>
+                }
+                else
+                {
+                    <div class="form-grid">
+                        <div class="form-col">
+                            <label class="form-label">IMAP Host</label>
+                            <input class="form-control form-control-sm" @bind="_imapHost" placeholder="imap.outlook.com" />
+                        </div>
+                        <div class="form-col form-col-narrow">
+                            <label class="form-label">Port</label>
+                            <input type="number" class="form-control form-control-sm" @bind="_imapPort" min="1" max="65535" />
+                        </div>
+                    </div>
+                    <div class="form-check mt-2 mb-3">
+                        <input class="form-check-input" type="checkbox" id="imapSsl" @bind="_imapSsl" />
+                        <label class="form-check-label form-label" for="imapSsl" style="margin-bottom:0">Use SSL / TLS</label>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Username</label>
+                        <input class="form-control form-control-sm" @bind="_imapUsername" placeholder="you@outlook.com" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="form-control form-control-sm" @bind="_imapPassword"
+                               placeholder="Leave blank to keep current" autocomplete="new-password" />
+                    </div>
+                    <div class="section-actions">
+                        <button class="btn btn-primary btn-sm" @onclick="SaveEmail" disabled="@_emailSaving">
+                            @(_emailSaving ? "Saving…" : "Save")
+                        </button>
+                        @if (_emailStatus is not null)
+                        {
+                            <span class="status-msg @(_emailError ? "status-error" : "status-ok")">@_emailStatus</span>
+                        }
+                    </div>
+                }
+            </div>
         </div>
 
-        <div class="home-card settings-card">
-            <div class="home-card-icon notif-icon">
-                <svg viewBox="0 0 16 16" fill="currentColor">
-                    <path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2zm.995-14.901a1 1 0 1 0-1.99 0A5.002 5.002 0 0 0 3 6c0 1.098-.5 6-2 7h14c-1.5-1-2-5.902-2-7 0-2.42-1.72-4.44-4.005-4.901z"/>
-                </svg>
+        <!-- ── RSS Feeds ─────────────────────────────────────────────────── -->
+        <div class="settings-section">
+            <div class="section-header">
+                <div class="section-icon news-icon">
+                    <svg viewBox="0 0 16 16" fill="currentColor" width="18" height="18">
+                        <path d="M0 2.5A1.5 1.5 0 0 1 1.5 1h11A1.5 1.5 0 0 1 14 2.5v10.528c0 .3-.05.654-.238.972h.738a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 1 1 0v9a1.5 1.5 0 0 1-1.5 1.5H1.497A1.497 1.497 0 0 1 0 13.5v-11zM1 13.5c0 .274.22.5.497.5H13.5a.5.5 0 0 0 .5-.5V2.5a.5.5 0 0 0-.5-.5h-11a.5.5 0 0 0-.5.5v11z"/>
+                        <path d="M2 3h4v4H2V3zm0 5h4v1H2V8zm0 2h4v1H2v-1zm0 2h4v1H2v-1zm5-9h4v1H7V3zm0 2h4v1H7V5zm0 2h4v1H7V7zm0 2h4v1H7V9zm0 2h4v1H7v-1zm0 2h4v1H7v-1z"/>
+                    </svg>
+                </div>
+                <span class="section-title">RSS Feeds</span>
             </div>
-            <div class="home-card-label">Notifications</div>
-            <p class="home-card-desc">Toast alerts for deadlines and new emails</p>
-            <span class="settings-tag">Background service</span>
+            <div class="section-body">
+                @if (_feedsLoading)
+                {
+                    <div class="loading-row"><div class="spinner-border spinner-border-sm me-2"></div> Loading…</div>
+                }
+                else
+                {
+                    @if (_feeds.Count == 0)
+                    {
+                        <p class="text-muted" style="font-size:0.85rem;">No feeds configured.</p>
+                    }
+                    else
+                    {
+                        <div class="feeds-list">
+                            @foreach (var feed in _feeds)
+                            {
+                                var f = feed;
+                                <div class="feed-row">
+                                    <span class="feed-category">@f.Category</span>
+                                    <span class="feed-url">@f.Url</span>
+                                    <button class="feed-toggle @(f.Enabled ? "feed-on" : "feed-off")"
+                                            @onclick="() => ToggleFeed(f)" title="@(f.Enabled ? "Disable" : "Enable")">
+                                        @(f.Enabled ? "On" : "Off")
+                                    </button>
+                                    <button class="btn btn-outline-danger btn-sm feed-del"
+                                            @onclick="() => DeleteFeed(f)" title="Remove feed">
+                                        <svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12">
+                                            <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                                            <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            }
+                        </div>
+                    }
+
+                    <div class="add-feed-row">
+                        <input class="form-control form-control-sm" @bind="_newFeedUrl"
+                               placeholder="https://example.com/feed.xml" />
+                        <input class="form-control form-control-sm add-category-input" @bind="_newFeedCategory"
+                               placeholder="Category" />
+                        <button class="btn btn-outline-primary btn-sm" @onclick="AddFeed" disabled="@_feedAdding">
+                            @(_feedAdding ? "Adding…" : "Add Feed")
+                        </button>
+                    </div>
+                    @if (_feedStatus is not null)
+                    {
+                        <span class="status-msg mt-2 d-inline-block @(_feedError ? "status-error" : "status-ok")">@_feedStatus</span>
+                    }
+                }
+            </div>
         </div>
 
-        <div class="home-card settings-card">
-            <div class="home-card-icon system-icon">
-                <svg viewBox="0 0 16 16" fill="currentColor">
-                    <path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492zM5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0z"/>
-                    <path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52l-.094-.319zm-2.633.283c.246-.835 1.428-.835 1.674 0l.094.319a1.873 1.873 0 0 0 2.693 1.115l.291-.16c.764-.415 1.6.42 1.184 1.185l-.159.292a1.873 1.873 0 0 0 1.116 2.692l.318.094c.835.246.835 1.428 0 1.674l-.319.094a1.873 1.873 0 0 0-1.115 2.693l.16.291c.415.764-.42 1.6-1.185 1.184l-.291-.159a1.873 1.873 0 0 0-2.693 1.116l-.094.318c-.246.835-1.428.835-1.674 0l-.094-.319a1.873 1.873 0 0 0-2.692-1.115l-.292.16c-.764.415-1.6-.42-1.184-1.185l.159-.291A1.873 1.873 0 0 0 1.945 8.93l-.319-.094c-.835-.246-.835-1.428 0-1.674l.319-.094A1.873 1.873 0 0 0 3.06 4.375l-.16-.292c-.415-.764.42-1.6 1.185-1.184l.292.159a1.873 1.873 0 0 0 2.692-1.115l.094-.319z"/>
-                </svg>
+        <!-- ── Notifications ─────────────────────────────────────────────── -->
+        <div class="settings-section">
+            <div class="section-header">
+                <div class="section-icon notif-icon">
+                    <svg viewBox="0 0 16 16" fill="currentColor" width="18" height="18">
+                        <path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2zm.995-14.901a1 1 0 1 0-1.99 0A5.002 5.002 0 0 0 3 6c0 1.098-.5 6-2 7h14c-1.5-1-2-5.902-2-7 0-2.42-1.72-4.44-4.005-4.901z"/>
+                    </svg>
+                </div>
+                <span class="section-title">Notifications</span>
             </div>
-            <div class="home-card-label">System</div>
-            <p class="home-card-desc">Database path, API URL, and allowed origins</p>
-            <span class="settings-tag">appsettings.json</span>
+            <div class="section-body">
+                @if (_notifLoading)
+                {
+                    <div class="loading-row"><div class="spinner-border spinner-border-sm me-2"></div> Loading…</div>
+                }
+                else
+                {
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="notifyNewTask" @bind="_notifyNewTask" />
+                        <label class="form-check-label" for="notifyNewTask">
+                            <span class="setting-label">New task created</span>
+                            <span class="setting-desc d-block">Toast when a task is added manually or from email</span>
+                        </label>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="notifyDeadline" @bind="_notifyDeadlineToday" />
+                        <label class="form-check-label" for="notifyDeadline">
+                            <span class="setting-label">Deadline due today</span>
+                            <span class="setting-desc d-block">Toast when a task's deadline falls on today's date</span>
+                        </label>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="notifyNews" @bind="_notifyNewsSummary" />
+                        <label class="form-check-label" for="notifyNews">
+                            <span class="setting-label">Daily news summary</span>
+                            <span class="setting-desc d-block">Morning toast with today's top headlines</span>
+                        </label>
+                    </div>
+                    @if (_notifyNewsSummary)
+                    {
+                        <div class="hour-row mb-3">
+                            <label class="form-label mb-0">Summary hour (0 – 23)</label>
+                            <input type="number" class="form-control form-control-sm hour-input"
+                                   @bind="_newsSummaryHour" min="0" max="23" />
+                        </div>
+                    }
+                    <div class="section-actions">
+                        <button class="btn btn-primary btn-sm" @onclick="SaveNotifications" disabled="@_notifSaving">
+                            @(_notifSaving ? "Saving…" : "Save")
+                        </button>
+                        @if (_notifStatus is not null)
+                        {
+                            <span class="status-msg @(_notifError ? "status-error" : "status-ok")">@_notifStatus</span>
+                        }
+                    </div>
+                }
+            </div>
         </div>
+
     </div>
 </div>
 
 @code {
+    // ── Theme ────────────────────────────────────────────────────────────────
+    private bool _isDark = true;
+
+    // ── Email ─────────────────────────────────────────────────────────────────
+    private bool    _emailLoading = true;
+    private bool    _emailSaving;
+    private string? _emailStatus;
+    private bool    _emailError;
+    private string  _imapHost     = "";
+    private int     _imapPort     = 993;
+    private bool    _imapSsl      = true;
+    private string? _imapUsername;
+    private string? _imapPassword;
+
+    // ── Feeds ─────────────────────────────────────────────────────────────────
+    private bool    _feedsLoading = true;
+    private bool    _feedAdding;
+    private string? _feedStatus;
+    private bool    _feedError;
+    private List<RssFeedDto> _feeds = [];
+    private string  _newFeedUrl      = "";
+    private string  _newFeedCategory = "";
+
+    // ── Notifications ──────────────────────────────────────────────────────────
+    private bool    _notifLoading = true;
+    private bool    _notifSaving;
+    private string? _notifStatus;
+    private bool    _notifError;
+    private bool    _notifyNewTask       = true;
+    private bool    _notifyDeadlineToday = true;
+    private bool    _notifyNewsSummary   = true;
+    private int     _newsSummaryHour     = 8;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var theme = await JS.InvokeAsync<string>("pch.getTheme");
+            _isDark = theme != "light";
+
+            await Task.WhenAll(LoadEmailAsync(), LoadFeedsAsync(), LoadNotificationsAsync());
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadEmailAsync()
+    {
+        try
+        {
+            var s = await SettingsApi.GetEmailAsync();
+            if (s is not null)
+            {
+                _imapHost     = s.ImapHost;
+                _imapPort     = s.ImapPort;
+                _imapSsl      = s.ImapSsl;
+                _imapUsername = s.ImapUsername;
+                // password is not pre-filled — user must re-enter to change
+            }
+        }
+        finally { _emailLoading = false; }
+    }
+
+    private async Task LoadFeedsAsync()
+    {
+        try   { _feeds = [..await SettingsApi.GetFeedsAsync()]; }
+        finally { _feedsLoading = false; }
+    }
+
+    private async Task LoadNotificationsAsync()
+    {
+        try
+        {
+            var s = await SettingsApi.GetNotificationsAsync();
+            if (s is not null)
+            {
+                _notifyNewTask       = s.NotifyNewTask;
+                _notifyDeadlineToday = s.NotifyDeadlineToday;
+                _notifyNewsSummary   = s.NotifyDailyNewsSummary;
+                _newsSummaryHour     = s.NewsSummaryHour;
+            }
+        }
+        finally { _notifLoading = false; }
+    }
+
+    // ── Theme ────────────────────────────────────────────────────────────────
+
+    private async Task ToggleTheme()
+    {
+        var next = await JS.InvokeAsync<string>("pch.toggleTheme");
+        _isDark = next != "light";
+    }
+
+    // ── Email ─────────────────────────────────────────────────────────────────
+
+    private async Task SaveEmail()
+    {
+        _emailSaving = true;
+        _emailStatus = null;
+        try
+        {
+            await SettingsApi.SaveEmailAsync(new EmailSettingsDto(
+                _imapHost, _imapPort, _imapSsl, _imapUsername,
+                string.IsNullOrEmpty(_imapPassword) ? null : _imapPassword));
+            _imapPassword = null; // clear after save
+            _emailStatus  = "Saved";
+            _emailError   = false;
+        }
+        catch
+        {
+            _emailStatus = "Error saving";
+            _emailError  = true;
+        }
+        finally { _emailSaving = false; }
+    }
+
+    // ── Feeds ─────────────────────────────────────────────────────────────────
+
+    private async Task ToggleFeed(RssFeedDto feed)
+    {
+        try
+        {
+            await SettingsApi.UpdateFeedAsync(feed.Id, !feed.Enabled);
+            var idx = _feeds.FindIndex(f => f.Id == feed.Id);
+            if (idx >= 0)
+                _feeds[idx] = feed with { Enabled = !feed.Enabled };
+            _feedStatus = null;
+        }
+        catch
+        {
+            _feedStatus = "Error updating feed";
+            _feedError  = true;
+        }
+    }
+
+    private async Task DeleteFeed(RssFeedDto feed)
+    {
+        try
+        {
+            await SettingsApi.DeleteFeedAsync(feed.Id);
+            _feeds.RemoveAll(f => f.Id == feed.Id);
+            _feedStatus = null;
+        }
+        catch
+        {
+            _feedStatus = "Error deleting feed";
+            _feedError  = true;
+        }
+    }
+
+    private async Task AddFeed()
+    {
+        if (string.IsNullOrWhiteSpace(_newFeedUrl) || string.IsNullOrWhiteSpace(_newFeedCategory))
+        {
+            _feedStatus = "Enter a URL and category";
+            _feedError  = true;
+            return;
+        }
+        _feedAdding = true;
+        _feedStatus = null;
+        try
+        {
+            var added = await SettingsApi.AddFeedAsync(new RssFeedCreateDto(_newFeedUrl, _newFeedCategory));
+            if (added is not null)
+                _feeds.Add(added);
+            _newFeedUrl      = "";
+            _newFeedCategory = "";
+            _feedStatus      = "Feed added";
+            _feedError       = false;
+        }
+        catch
+        {
+            _feedStatus = "Error adding feed";
+            _feedError  = true;
+        }
+        finally { _feedAdding = false; }
+    }
+
+    // ── Notifications ─────────────────────────────────────────────────────────
+
+    private async Task SaveNotifications()
+    {
+        _notifSaving = true;
+        _notifStatus = null;
+        try
+        {
+            await SettingsApi.SaveNotificationsAsync(new NotificationSettingsDto(
+                _notifyNewTask, _notifyDeadlineToday, _notifyNewsSummary,
+                Math.Clamp(_newsSummaryHour, 0, 23)));
+            _notifStatus = "Saved";
+            _notifError  = false;
+        }
+        catch
+        {
+            _notifStatus = "Error saving";
+            _notifError  = true;
+        }
+        finally { _notifSaving = false; }
+    }
+
     private void GoBack() => Nav.NavigateTo("/");
 }
 
+@using PCH.Core.Dtos
+
 <style>
+    /* ── Page layout ─────────────────────────────────────────── */
+    .pch-settings { padding: 0.25rem 0 2rem; }
+
+    .settings-header { margin-bottom: 2rem; }
+    .settings-title {
+        font-size: 1.75rem;
+        font-weight: 600;
+        color: var(--pch-text);
+        letter-spacing: -0.03em;
+        margin: 1rem 0 0.25rem;
+    }
+    .settings-sub {
+        color: var(--pch-text-muted);
+        font-size: 0.875rem;
+        margin: 0;
+    }
+
     .back-btn {
         display: inline-flex;
         align-items: center;
         gap: 0.4rem;
         background: none;
-        border: 1px solid #3e3e4e;
-        color: #a1a1aa;
+        border: 1px solid var(--pch-border);
+        color: var(--pch-text-secondary);
         padding: 0.35rem 0.75rem;
         border-radius: 6px;
         font-size: 0.8rem;
@@ -85,29 +473,160 @@
         transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
     }
     .back-btn:hover {
-        color: #fafafa;
-        border-color: #71717a;
-        background-color: rgba(255,255,255,0.05);
+        color: var(--pch-text);
+        border-color: var(--pch-text-muted);
+        background-color: var(--pch-nav-hover);
     }
-    .back-btn:active { transform: translateY(1px); }
 
-    .settings-card { cursor: default; }
-    .settings-card:hover { border-color: #3e3e4e; transform: none; }
+    /* ── Sections ────────────────────────────────────────────── */
+    .settings-sections { display: flex; flex-direction: column; gap: 1rem; }
 
-    .settings-tag {
-        display: inline-block;
-        margin-top: 0.75rem;
-        font-size: 0.68rem;
-        font-weight: 500;
-        color: #71717a;
-        background: rgba(255,255,255,0.05);
-        border: 1px solid #3e3e4e;
+    .settings-section {
+        background: var(--pch-surface);
+        border: 1px solid var(--pch-border);
+        border-radius: 10px;
+    }
+
+    .section-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid var(--pch-border);
+    }
+    .section-title {
+        font-weight: 600;
+        font-size: 0.95rem;
+        color: var(--pch-text);
+    }
+    .section-icon {
+        width: 34px;
+        height: 34px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    .appearance-icon { background: rgba(251,191,36,0.14); color: #fbbf24; }
+    .email-icon      { background: rgba(96,165,250,0.14);  color: #60a5fa; }
+    .news-icon       { background: rgba(251,191,36,0.14);  color: #fbbf24; }
+    .notif-icon      { background: rgba(167,139,250,0.14); color: #a78bfa; }
+
+    .section-body { padding: 1.25rem; }
+
+    /* ── Theme toggle ─────────────────────────────────────────── */
+    .setting-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+    .setting-label { font-weight: 500; font-size: 0.875rem; color: var(--pch-text); }
+    .setting-desc  { font-size: 0.78rem; color: var(--pch-text-muted); margin-top: 0.1rem; }
+
+    .theme-toggle-row { display: flex; align-items: center; gap: 0.6rem; }
+    .theme-label { font-size: 0.8rem; font-weight: 500; color: var(--pch-text-secondary); }
+
+    .theme-toggle {
+        position: relative;
+        width: 42px;
+        height: 24px;
+        border-radius: 12px;
+        border: none;
+        cursor: pointer;
+        padding: 0;
+        transition: background-color 0.2s ease;
+        flex-shrink: 0;
+    }
+    .theme-toggle.is-dark  { background-color: var(--pch-elevated); }
+    .theme-toggle.is-light { background-color: var(--pch-accent); }
+    .theme-toggle-thumb {
+        position: absolute;
+        top: 3px;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #fff;
+        transition: left 0.2s ease;
+        pointer-events: none;
+    }
+    .theme-toggle.is-dark  .theme-toggle-thumb { left: 3px; }
+    .theme-toggle.is-light .theme-toggle-thumb { left: 21px; }
+
+    /* ── Form layout ─────────────────────────────────────────── */
+    .form-grid { display: grid; grid-template-columns: 1fr auto; gap: 0.75rem; margin-bottom: 0.75rem; }
+    .form-col { }
+    .form-col-narrow { width: 90px; }
+
+    /* ── Feeds list ──────────────────────────────────────────── */
+    .feeds-list { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; }
+    .feed-row {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.5rem 0.75rem;
+        background: var(--pch-elevated);
+        border-radius: 6px;
+        border: 1px solid var(--pch-border);
+    }
+    .feed-category {
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--pch-text-muted);
+        min-width: 62px;
+    }
+    .feed-url {
+        flex: 1;
+        font-size: 0.8rem;
+        color: var(--pch-text-secondary);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .feed-toggle {
+        font-size: 0.72rem;
+        font-weight: 600;
+        padding: 0.2em 0.6em;
         border-radius: 4px;
-        padding: 0.2em 0.5em;
-        font-family: 'Outfit', monospace;
-        letter-spacing: 0.02em;
+        border: 1px solid;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        min-width: 36px;
     }
+    .feed-on  { background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.3); color: #34d399; }
+    .feed-off { background: var(--pch-elevated);   border-color: var(--pch-border);    color: var(--pch-text-muted); }
+    .feed-del { padding: 0.2rem 0.4rem; }
 
-    .notif-icon { background: rgba(167,139,250,0.14); color: #a78bfa; }
-    .system-icon { background: rgba(161,161,170,0.14); color: #a1a1aa; }
+    .add-feed-row {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        margin-top: 0.5rem;
+    }
+    .add-category-input { max-width: 120px; }
+
+    /* ── Notifications ────────────────────────────────────────── */
+    .hour-row {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding-left: 1.5rem;
+    }
+    .hour-input { width: 70px; }
+
+    /* ── Actions ─────────────────────────────────────────────── */
+    .section-actions { display: flex; align-items: center; gap: 0.75rem; }
+    .status-msg  { font-size: 0.8rem; font-weight: 500; }
+    .status-ok   { color: var(--pch-accent); }
+    .status-error { color: var(--pch-danger); }
+
+    .loading-row {
+        display: flex;
+        align-items: center;
+        font-size: 0.85rem;
+        color: var(--pch-text-muted);
+    }
 </style>
