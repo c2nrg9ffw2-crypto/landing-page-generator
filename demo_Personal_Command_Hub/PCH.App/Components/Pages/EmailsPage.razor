@@ -1,0 +1,159 @@
+@page "/emails"
+@rendermode InteractiveServer
+@inject EmailApiClient Api
+
+<PageTitle>Emails</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0">Emails</h2>
+    <button class="btn btn-primary btn-sm" @onclick="SyncAsync" disabled="@_syncing">
+        @(_syncing ? "Syncing…" : "Sync Inbox")
+    </button>
+</div>
+
+@if (_syncMessage is not null)
+{
+    <div class="alert @(_syncMessage.StartsWith("Sync failed") ? "alert-danger" : "alert-info") alert-dismissible mb-3">
+        @_syncMessage
+        <button type="button" class="btn-close" @onclick="() => _syncMessage = null"></button>
+    </div>
+}
+
+@if (_loading)
+{
+    <div class="d-flex align-items-center gap-2 text-muted">
+        <div class="spinner-border spinner-border-sm" role="status"></div>
+        <span>Loading emails…</span>
+    </div>
+}
+else if (_error is not null)
+{
+    <div class="alert alert-danger d-flex justify-content-between align-items-center">
+        <span>@_error</span>
+        <button class="btn btn-sm btn-outline-danger" @onclick="LoadAsync">Retry</button>
+    </div>
+}
+else
+{
+    @if (_emails.Count == 0)
+    {
+        <p class="text-muted fst-italic">No emails synced yet. Click "Sync Inbox" to fetch your latest messages.</p>
+    }
+    else
+    {
+        <p class="text-muted small mb-2">@_emails.Count email(s) stored — keyword matches highlighted.</p>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Received</th>
+                        <th>From</th>
+                        <th>Subject</th>
+                        <th>Type</th>
+                        <th>Summary</th>
+                        <th>Task</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var email in _emails)
+                    {
+                        <tr class="@(email.IsKeywordMatch ? "table-warning" : "")">
+                            <td class="text-muted small" style="white-space:nowrap">
+                                @email.ReceivedAt.LocalDateTime.ToString("d MMM HH:mm")
+                            </td>
+                            <td class="small">@ShortSender(email.Sender)</td>
+                            <td>
+                                <span class="@(email.IsKeywordMatch ? "fw-semibold" : "")">
+                                    @email.Subject
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge @TypeBadgeClass(email.EmailType)">@email.EmailType</span>
+                            </td>
+                            <td class="small text-muted" style="max-width:320px">
+                                @if (!string.IsNullOrWhiteSpace(email.LlmSummary))
+                                {
+                                    @email.LlmSummary
+                                }
+                                else
+                                {
+                                    <span>—</span>
+                                }
+                            </td>
+                            <td style="white-space:nowrap">
+                                @if (email.LinkedTaskId.HasValue)
+                                {
+                                    <span class="badge bg-info">Task #@email.LinkedTaskId</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">—</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+}
+
+@code {
+    private List<EmailResponseDto> _emails = new();
+    private bool _loading = true;
+    private string? _error;
+    private bool _syncing;
+    private string? _syncMessage;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _error = null;
+        try
+        {
+            _emails = (await Api.GetEmailsAsync()).ToList();
+        }
+        catch (Exception ex)
+        {
+            _error = $"Could not load emails: {ex.Message}";
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task SyncAsync()
+    {
+        _syncing = true;
+        _syncMessage = null;
+        try
+        {
+            var count = await Api.SyncAsync();
+            _syncMessage = count == 0 ? "No new emails found." : $"Synced {count} new email(s).";
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            _syncMessage = $"Sync failed: {ex.Message}";
+        }
+        finally
+        {
+            _syncing = false;
+        }
+    }
+
+    private static string TypeBadgeClass(EmailType t) => t switch
+    {
+        EmailType.Booking  => "bg-primary",
+        EmailType.Deadline => "bg-danger",
+        EmailType.Meeting  => "bg-warning text-dark",
+        EmailType.Invoice  => "bg-secondary",
+        _                  => "bg-light text-dark border"
+    };
+
+    private static string ShortSender(string s) =>
+        s.Length > 38 ? s[..35] + "…" : s;
+}

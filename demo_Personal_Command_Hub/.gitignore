@@ -1,0 +1,26 @@
+# .NET build output
+bin/
+obj/
+*.user
+*.suo
+
+# Rider / VS
+.idea/
+.vs/
+
+# SQLite local database
+*.db
+*.db-shm
+*.db-wal
+
+# Local secrets / config overrides
+appsettings.*.local.json
+secrets.json
+
+# Python (legacy placeholder)
+.venv/
+__pycache__/
+*.pyc
+
+# Runtime artifacts from start-demo.ps1 / stop-demo.ps1
+.demo-pids.txt

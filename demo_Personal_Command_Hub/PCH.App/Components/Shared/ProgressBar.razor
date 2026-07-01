@@ -1,0 +1,53 @@
+@{
+    var clamped = Math.Clamp(Value, 0, 100);
+}
+
+<div class="pch-prog-wrap">
+    <div class="pch-bar" role="progressbar"
+         aria-valuenow="@clamped" aria-valuemin="0" aria-valuemax="100"
+         title="@clamped%">
+        <div class="pch-bar-fill @(clamped >= 100 ? "pch-bar-done" : "")"
+             style="width: @(clamped)%"></div>
+    </div>
+    @if (ShowLabel)
+    {
+        <span class="pch-bar-label">@clamped%</span>
+    }
+</div>
+
+@code {
+    [Parameter] public int Value { get; set; }
+    [Parameter] public bool ShowLabel { get; set; } = true;
+}
+
+<style>
+    .pch-prog-wrap {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        min-width: 90px;
+    }
+    .pch-bar {
+        flex: 1;
+        height: 5px;
+        background: #2b2b35;
+        border-radius: 999px;
+        overflow: hidden;
+    }
+    .pch-bar-fill {
+        height: 100%;
+        background: #10b981;
+        border-radius: 999px;
+        transition: width 0.3s ease;
+    }
+    .pch-bar-done { background: #34d399; }
+    .pch-bar-label {
+        font-size: 0.7rem;
+        color: #71717a;
+        font-weight: 500;
+        font-variant-numeric: tabular-nums;
+        flex-shrink: 0;
+        min-width: 2.8ch;
+        text-align: right;
+    }
+</style>

@@ -1,0 +1,153 @@
+@page "/news"
+@rendermode InteractiveServer
+@inject NewsApiClient Api
+
+<PageTitle>News</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0">News</h2>
+    <button class="btn btn-primary btn-sm" @onclick="SyncAsync" disabled="@_syncing">
+        @(_syncing ? "Syncing…" : "Sync Feeds")
+    </button>
+</div>
+
+@if (_syncMessage is not null)
+{
+    <div class="alert @(_syncMessage.StartsWith("Sync failed") ? "alert-danger" : "alert-info") alert-dismissible mb-3">
+        @_syncMessage
+        <button type="button" class="btn-close" @onclick="() => _syncMessage = null"></button>
+    </div>
+}
+
+@if (_loading)
+{
+    <div class="d-flex align-items-center gap-2 text-muted">
+        <div class="spinner-border spinner-border-sm" role="status"></div>
+        <span>Loading news…</span>
+    </div>
+}
+else if (_error is not null)
+{
+    <div class="alert alert-danger d-flex justify-content-between align-items-center">
+        <span>@_error</span>
+        <button class="btn btn-sm btn-outline-danger" @onclick="LoadAsync">Retry</button>
+    </div>
+}
+else
+{
+    <ul class="nav nav-tabs mb-3">
+        @foreach (var tab in Tabs)
+        {
+            var t = tab;
+            <li class="nav-item">
+                <button class="nav-link @(_activeTab == t ? "active" : "")" @onclick="() => SetTab(t)">
+                    @t
+                </button>
+            </li>
+        }
+    </ul>
+
+    @if (Visible.Count == 0)
+    {
+        <p class="text-muted fst-italic">No articles yet. Click "Sync Feeds" to fetch the latest news.</p>
+    }
+    else
+    {
+        <div class="row row-cols-1 row-cols-md-2 g-3">
+            @foreach (var item in Visible)
+            {
+                <div class="col">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body d-flex flex-column">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="badge @CategoryBadgeClass(item.FeedCategory)">@item.FeedCategory</span>
+                                <small class="text-muted">@item.Published.LocalDateTime.ToString("d MMM HH:mm")</small>
+                            </div>
+                            <h6 class="card-title mb-1">
+                                <a href="@item.Link" target="_blank" rel="noopener noreferrer"
+                                   class="text-decoration-none">
+                                    @item.Title
+                                </a>
+                            </h6>
+                            @if (!string.IsNullOrWhiteSpace(item.Summary))
+                            {
+                                <p class="card-text small text-muted mt-auto mb-0">@ShortSummary(item.Summary)</p>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+        <p class="text-muted small mt-3">@Visible.Count article(s) shown.</p>
+    }
+}
+
+@code {
+    private static readonly string[] Tabs = ["All", "Sweden", "Tech", "World", "Science", "Germany"];
+    private string _activeTab = "All";
+
+    private List<NewsResponseDto> _items = new();
+    private bool _loading = true;
+    private string? _error;
+    private bool _syncing;
+    private string? _syncMessage;
+
+    private List<NewsResponseDto> Visible => _activeTab == "All"
+        ? _items
+        : _items.Where(n => n.FeedCategory == _activeTab).ToList();
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _error = null;
+        try
+        {
+            _items = (await Api.GetNewsAsync()).ToList();
+        }
+        catch (Exception ex)
+        {
+            _error = $"Could not load news: {ex.Message}";
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private void SetTab(string tab) => _activeTab = tab;
+
+    private async Task SyncAsync()
+    {
+        _syncing = true;
+        _syncMessage = null;
+        try
+        {
+            var count = await Api.SyncAsync();
+            _syncMessage = count == 0 ? "No new articles found." : $"Synced {count} new article(s).";
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            _syncMessage = $"Sync failed: {ex.Message}";
+        }
+        finally
+        {
+            _syncing = false;
+        }
+    }
+
+    private static string CategoryBadgeClass(string cat) => cat switch
+    {
+        "Sweden"  => "bg-warning",
+        "Germany" => "bg-danger",
+        "Science" => "bg-info",
+        "Tech"    => "bg-primary",
+        "World"   => "bg-secondary",
+        _         => "bg-secondary"
+    };
+
+    private static string ShortSummary(string s) =>
+        s.Length > 180 ? s[..177] + "…" : s;
+}

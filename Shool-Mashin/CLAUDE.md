@@ -4,67 +4,105 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Running the App
 
-No build step. Serve the directory with any static file server — opening `index.html` directly as a `file://` URL also works but some browsers restrict it.
+No build step. Two ways to run:
 
-**macOS (Python, pre-installed):**
-```bash
-python3 -m http.server 8080
-# open http://localhost:8080
-```
-
-**macOS/Windows (Node.js):**
-```bash
-npx serve .
-```
-
-**Windows (file open):**
+**Direct file open (Windows):**
 ```
 start index.html
 ```
 
-Chart.js is loaded from CDN (`cdn.jsdelivr.net`), so an internet connection is required for the chart to render.
+**macOS server (use `Shool-Mashin-Server/` folder instead):**
+```bash
+npm install
+npm start
+# opens at http://localhost:8080
+```
+
+**Any machine (Python, pre-installed on macOS):**
+```bash
+python3 -m http.server 8080
+```
 
 After any edit, reopen or hard-refresh the browser page to see changes.
 
+External dependencies loaded from CDN (internet required):
+- Chart.js — `cdn.jsdelivr.net`
+- SheetJS (xlsx) — `unpkg.com`
+
 ## Architecture
 
-Three files, no framework, no dependencies to install:
+Three files, no framework, no build tool:
 
 - **`index.html`** — markup only; no inline scripts or styles
 - **`app.js`** — all logic; plain ES6, no modules
-- **`style.css`** — layout uses CSS Grid (`.panels`) and Flexbox (`.form-row`)
+- **`style.css`** — CSS Grid (`.panels`, `.profit-summary`), Flexbox (`.form-row`, `.settings-panel`)
 
-### Data Layer
+A sister folder **`Shool-Mashin-Server/`** contains the same three files plus `server.js` (Express) and `package.json` for macOS server deployment.
 
-Everything is persisted to `localStorage` under two keys:
+## Data Layer
+
+Two `localStorage` keys:
 
 | Key | Shape | Purpose |
 |---|---|---|
 | `vendingMachineData` | `SnackItem[]` | Current inventory |
-| `vendingMachineHistory` | `HistoryEntry[]` | Per-sale log for the chart |
+| `vendingMachineHistory` | `HistoryEntry[]` | Per-sale log for chart + export |
 
 ```js
 // SnackItem
-{ id: number, name: string, startingStock: number, totalPurchased: number, remaining: number }
+{ id, name, startingStock, totalPurchased, remaining, buyCost, margin }
 
 // HistoryEntry
 { date: "YYYY-MM-DD", snackName: string, qty: number }
 ```
 
-`remaining` is stored alongside `startingStock` and `totalPurchased` — it is kept in sync manually, not computed on read. `restock` increments both `startingStock` and `remaining` so the Low/Empty status thresholds scale correctly.
+`remaining` is stored and kept in sync manually — not computed on read.
+`sellPrice` is always **computed**, never stored (see Pricing Model).
+On load, `migrateData()` converts any legacy `sellPrice` field to `margin`.
 
-### Render Cycle
+Additional `localStorage` keys for UI state:
+- `showChart`, `showProfit`, `darkMode` — boolean toggles
+- `hiddenSnacks` — JSON array of snack names hidden from the chart
+- `overrideDate` — ISO date string used instead of today when logging sales
 
-Every mutation (`addSnack`, `logSale`, `restock`, `deleteSnack`) ends with `render()`. `render()` rebuilds the entire table body and repopulates both `<select>` dropdowns from scratch on each call. `renderChart()` is called separately and rebuilds the Chart.js instance (destroying the previous one via `chartInstance.destroy()`).
+`chartView` (`'daily'` | `'monthly'`) is a module-level variable — **not** persisted to localStorage; resets to `'daily'` on every page reload.
 
-### Status Badge Logic (`statusLabel`)
+## Render Cycle
+
+Every mutation ends with `render()`, which rebuilds the entire table body, both `<select>` dropdowns, the snack chart toggles, and the edit-prices list from scratch. `renderChart()` is called separately and destroys/recreates the Chart.js instance each time.
+
+## Gotchas
+
+- `#snackSellPrice` in the HTML captures **margin %**, not sell price — the ID is a naming artifact from before the margin migration.
+- The "Add Snack" form lives inside the Settings slide-in panel (`#settingsPanel`), not in the main page body.
+
+## Key Features & Where They Live
+
+| Feature | Location |
+|---|---|
+| Settings slide-in panel | `#settingsPanel`, toggled via `openSettings()` / `closeSettings()` |
+| Dark mode | `body.dark` CSS class; toggled by `applyDark()` |
+| Profit summary cards | `.profit-summary`; updated by `updateProfitSummary(data)` |
+| Per-snack chart toggles | `renderSnackToggles()` → `hiddenSnacks` Set |
+| Bulk margin adjustment | `applyPriceChange(['margin'])` |
+| Sale date override | `getLogDate()` returns `overrideDate` or today |
+| Export to .xlsx | `exportToExcel()` using SheetJS — Sales Log (per-entry: date, snack, qty, profit) and Daily Totals (per-day pivot: snack qty columns + Total + Profit) |
+| Reset all data | Red button at bottom of Settings panel — `localStorage.clear()` + `location.reload()` |
+
+## Pricing Model
+
+- `buyCost` — unit cost to stock the item
+- `margin` — profit margin % entered by the user
+- `sellPrice` — computed as `buyCost × (1 + margin / 100)` via `computeSellPrice(item)`
+- **Cost** in profit summary = `buyCost × startingStock` (all stocked units, not just sold). `restock()` adds to `startingStock` cumulatively, which raises this cost figure permanently.
+- **Revenue** = `sellPrice × totalPurchased`
+- **Profit** = Revenue − Cost
+- All monetary values displayed with `fmt()`, which appends ` kr` (SEK)
+
+## Status Badge Logic (`statusLabel`)
 
 | Condition | Badge |
 |---|---|
 | `remaining === 0` | Empty (red) |
 | `remaining / startingStock ≤ 0.25` | Low (yellow) |
 | otherwise | OK (green) |
-
-### ID Generation
-
-`id` is `Math.max(...data.map(s => s.id)) + 1`, or `1` if the array is empty. IDs are never reused after deletion.

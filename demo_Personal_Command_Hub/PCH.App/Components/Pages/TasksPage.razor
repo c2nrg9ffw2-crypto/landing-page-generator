@@ -1,0 +1,358 @@
+@page "/tasks"
+@rendermode InteractiveServer
+@using PCH.Core.Dtos
+@using PCH.Core.Models
+@using PCH.App.Services
+@using PCH.App.Components.Shared
+@inject TaskApiClient Api
+
+<PageTitle>Tasks</PageTitle>
+
+<h2 class="mb-3">Tasks</h2>
+
+@* ───────── Loading / Error / Empty states ───────── *@
+@if (_loading)
+{
+    <div class="d-flex align-items-center gap-2 text-muted">
+        <div class="spinner-border spinner-border-sm" role="status"></div>
+        <span>Loading tasks…</span>
+    </div>
+}
+else if (_error is not null)
+{
+    <div class="alert alert-danger d-flex justify-content-between align-items-center">
+        <span>@_error</span>
+        <button class="btn btn-sm btn-outline-danger" @onclick="LoadAsync">Retry</button>
+    </div>
+}
+else
+{
+    @* ───────── Category filter tabs ───────── *@
+    <ul class="nav nav-tabs mb-3">
+        <li class="nav-item">
+            <button class="nav-link @(ActiveFilter == null ? "active" : "")" @onclick="() => ActiveFilter = null">All</button>
+        </li>
+        @foreach (TaskCategory cat in Enum.GetValues<TaskCategory>())
+        {
+            var captured = cat;
+            <li class="nav-item">
+                <button class="nav-link @(ActiveFilter == captured ? "active" : "")"
+                        @onclick="() => ActiveFilter = captured">
+                    @captured
+                </button>
+            </li>
+        }
+    </ul>
+
+    @* ───────── Task list ───────── *@
+    @if (Visible.Count == 0)
+    {
+        <p class="text-muted fst-italic">No tasks found.</p>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Title</th>
+                        <th>Category</th>
+                        <th>Status</th>
+                        <th style="min-width:140px">Progress</th>
+                        <th>Due</th>
+                        <th>Source</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var task in Visible)
+                    {
+                        var isDone = task.Status == TaskState.Done;
+                        var isOverdue = task.DueDate.HasValue
+                                        && task.DueDate.Value < DateTimeOffset.Now
+                                        && !isDone;
+
+                        <tr class="@(isDone ? "table-success" : "")">
+                            <td>
+                                <span class="@(isDone ? "text-decoration-line-through text-muted" : "")">
+                                    @task.Title
+                                </span>
+                                @if (isDone)
+                                {
+                                    <span class="badge bg-success ms-1">Done</span>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(task.Description))
+                                {
+                                    <div class="text-muted small">@task.Description</div>
+                                }
+                            </td>
+                            <td><span class="badge bg-secondary">@task.Category</span></td>
+                            <td>
+                                @if (_editId == task.Id)
+                                {
+                                    <select class="form-select form-select-sm"
+                                            value="@_editStatus"
+                                            @onchange="e => _editStatus = Enum.Parse<TaskState>(e.Value!.ToString()!)">
+                                        @foreach (TaskState s in Enum.GetValues<TaskState>())
+                                        {
+                                            <option value="@s">@s</option>
+                                        }
+                                    </select>
+                                }
+                                else
+                                {
+                                    <span class="badge @StatusBadgeClass(task.Status)">@task.Status</span>
+                                }
+                            </td>
+                            <td>
+                                @if (_editId == task.Id)
+                                {
+                                    <input type="number" class="form-control form-control-sm"
+                                           min="0" max="100"
+                                           @bind="_editProgress" />
+                                }
+                                else
+                                {
+                                    <ProgressBar Value="@task.Progress" />
+                                }
+                            </td>
+                            <td class="@(isOverdue ? "text-danger fw-semibold" : "")">
+                                @if (task.DueDate.HasValue)
+                                {
+                                    @task.DueDate.Value.LocalDateTime.ToString("d MMM yyyy")
+                                    @if (isOverdue)
+                                    {
+                                        <span class="badge bg-danger ms-1">Overdue</span>
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="text-muted">—</span>
+                                }
+                            </td>
+                            <td><span class="text-muted small">@task.Source</span></td>
+                            <td class="text-end" style="white-space:nowrap">
+                                @if (_editId == task.Id)
+                                {
+                                    <button class="btn btn-sm btn-primary me-1" @onclick="() => SaveEditAsync(task)">Save</button>
+                                    <button class="btn btn-sm btn-outline-secondary" @onclick="CancelEdit">Cancel</button>
+                                }
+                                else
+                                {
+                                    <button class="btn btn-sm btn-outline-primary me-1" @onclick="() => BeginEdit(task)">Edit</button>
+                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteAsync(task.Id)">Del</button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    @* ───────── Add-task form ───────── *@
+    <hr />
+    <h5>Add Task</h5>
+    @if (_formError is not null)
+    {
+        <div class="alert alert-warning alert-dismissible">
+            @_formError
+            <button type="button" class="btn-close" @onclick="() => _formError = null"></button>
+        </div>
+    }
+    <EditForm Model="_form" OnValidSubmit="SubmitFormAsync">
+        <DataAnnotationsValidator />
+        <div class="row g-2 align-items-end">
+            <div class="col-12 col-md-4">
+                <label class="form-label mb-1">Title <span class="text-danger">*</span></label>
+                <InputText class="form-control form-control-sm" @bind-Value="_form.Title"
+                           placeholder="Task title" />
+                <ValidationMessage For="() => _form.Title" />
+            </div>
+            <div class="col-12 col-md-4">
+                <label class="form-label mb-1">Description</label>
+                <InputText class="form-control form-control-sm" @bind-Value="_form.Description"
+                           placeholder="Optional" />
+            </div>
+            <div class="col-6 col-md-2">
+                <label class="form-label mb-1">Category</label>
+                <InputSelect class="form-select form-select-sm" @bind-Value="_form.Category">
+                    @foreach (TaskCategory cat in Enum.GetValues<TaskCategory>())
+                    {
+                        <option value="@cat">@cat</option>
+                    }
+                </InputSelect>
+            </div>
+            <div class="col-6 col-md-2">
+                <label class="form-label mb-1">Progress (0–100)</label>
+                <InputNumber class="form-control form-control-sm" @bind-Value="_form.Progress" />
+            </div>
+            <div class="col-6 col-md-3">
+                <label class="form-label mb-1">Due Date</label>
+                <InputDate class="form-control form-control-sm" @bind-Value="_form.DueDate" />
+            </div>
+            <div class="col-6 col-md-2">
+                <button type="submit" class="btn btn-primary btn-sm w-100"
+                        disabled="@_submitting">
+                    @(_submitting ? "Adding…" : "Add Task")
+                </button>
+            </div>
+        </div>
+    </EditForm>
+}
+
+@code {
+    // ── State ──────────────────────────────────────────────────────────────
+    private List<TaskResponseDto> _tasks = new();
+    private bool _loading = true;
+    private string? _error;
+
+    // Filter
+    private TaskCategory? ActiveFilter { get; set; } = null;
+
+    // Tasks visible under the active category filter (null = all).
+    private List<TaskResponseDto> Visible => ActiveFilter is null
+        ? _tasks
+        : _tasks.Where(t => t.Category == ActiveFilter).ToList();
+
+    // Inline edit
+    private int _editId = -1;
+    private int _editProgress;
+    private TaskState _editStatus;
+
+    // Add form
+    private AddTaskForm _form = new();
+    private bool _submitting;
+    private string? _formError;
+
+    // ── Lifecycle ──────────────────────────────────────────────────────────
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    // ── Data loading ───────────────────────────────────────────────────────
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _error = null;
+        try
+        {
+            var result = await Api.GetTasksAsync();
+            _tasks = result
+                .OrderBy(t => t.Status == TaskState.Done)
+                .ThenBy(t => t.DueDate ?? DateTimeOffset.MaxValue)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            _error = $"Could not load tasks: {ex.Message}";
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    // ── Inline edit ────────────────────────────────────────────────────────
+    private void BeginEdit(TaskResponseDto task)
+    {
+        _editId = task.Id;
+        _editProgress = task.Progress;
+        _editStatus = task.Status;
+    }
+
+    private void CancelEdit()
+    {
+        _editId = -1;
+    }
+
+    private async Task SaveEditAsync(TaskResponseDto task)
+    {
+        var dto = new TaskUpdateDto(
+            task.Title,
+            task.Description,
+            task.Category,
+            _editStatus,
+            Math.Clamp(_editProgress, 0, 100),
+            task.DueDate);
+        try
+        {
+            await Api.UpdateTaskAsync(task.Id, dto);
+            _editId = -1;
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            _formError = $"Save failed: {ex.Message}";
+        }
+    }
+
+    // ── Delete ─────────────────────────────────────────────────────────────
+    private async Task DeleteAsync(int id)
+    {
+        try
+        {
+            await Api.DeleteTaskAsync(id);
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            _error = $"Delete failed: {ex.Message}";
+        }
+    }
+
+    // ── Add form submit ────────────────────────────────────────────────────
+    private async Task SubmitFormAsync()
+    {
+        _submitting = true;
+        _formError = null;
+        try
+        {
+            DateTimeOffset? due = _form.DueDate.HasValue
+                ? new DateTimeOffset(_form.DueDate.Value, TimeZoneInfo.Local.GetUtcOffset(_form.DueDate.Value))
+                : null;
+
+            var dto = new TaskCreateDto(
+                _form.Title!,
+                string.IsNullOrWhiteSpace(_form.Description) ? null : _form.Description,
+                _form.Category,
+                due,
+                Math.Clamp(_form.Progress, 0, 100));
+
+            await Api.CreateTaskAsync(dto);
+            _form = new AddTaskForm();
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            _formError = $"Could not add task: {ex.Message}";
+        }
+        finally
+        {
+            _submitting = false;
+        }
+    }
+
+    // ── Helpers ────────────────────────────────────────────────────────────
+    private static string StatusBadgeClass(TaskState s) => s switch
+    {
+        TaskState.Done       => "bg-success",
+        TaskState.InProgress => "bg-primary",
+        TaskState.Cancelled  => "bg-secondary",
+        _                    => "bg-light text-dark border"
+    };
+
+    // ── Form model ─────────────────────────────────────────────────────────
+    private sealed class AddTaskForm
+    {
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Title is required.")]
+        [System.ComponentModel.DataAnnotations.StringLength(200)]
+        public string? Title { get; set; }
+
+        public string? Description { get; set; }
+        public TaskCategory Category { get; set; } = TaskCategory.General;
+        public DateTime? DueDate { get; set; }
+        public int Progress { get; set; } = 0;
+    }
+}

@@ -1,0 +1,18 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "bash",
+            "timeout": 180,
+            "statusMessage": "Building PCH.sln…",
+            "command": "f=$(grep -oE '\"file_path\"[[:space:]]*:[[:space:]]*\"[^\"]*\"' | head -1 | sed -E 's/.*\"([^\"]*)\"$/\\1/'); case \"$f\" in *.cs|*.razor|*.csproj|*.sln) ;; *) exit 0;; esac; cd \"C:/Users/vikto/OneDrive/Nod Coding Bootcamp/Github/Personal_Command_Hub\" || exit 0; out=$(\"/c/Program Files/dotnet/dotnet.exe\" build PCH.sln -nologo -clp:ErrorsOnly 2>&1); if [ $? -ne 0 ]; then echo \"PCH build FAILED after $f\" >&2; echo \"$out\" >&2; exit 2; fi"
+          }
+        ]
+      }
+    ]
+  }
+}

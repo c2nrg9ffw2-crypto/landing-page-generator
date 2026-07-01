@@ -1,0 +1,44 @@
+@page "/"
+
+<PageTitle>Home - Command Hub</PageTitle>
+
+<div class="pch-home">
+    <div class="home-header">
+        <h1 class="home-title">Command Hub</h1>
+        <p class="home-date">@DateTime.Now.ToString("dddd, d MMMM yyyy")</p>
+    </div>
+
+    <div class="home-grid">
+        <a href="/tasks" class="home-card">
+            <div class="home-card-icon tasks-icon">
+                <svg viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z"/>
+                    <path d="M10.97 4.97a.75.75 0 0 1 1.071 1.05l-3.992 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.235.235 0 0 1 .02-.022z"/>
+                </svg>
+            </div>
+            <div class="home-card-label">Tasks</div>
+            <p class="home-card-desc">Track deadlines, progress, and categories</p>
+        </a>
+
+        <a href="/emails" class="home-card">
+            <div class="home-card-icon emails-icon">
+                <svg viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1H2zm13 2.383-4.708 2.825L15 11.105V5.383zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741zM1 11.105l4.708-2.897L1 5.383v5.722z"/>
+                </svg>
+            </div>
+            <div class="home-card-label">Emails</div>
+            <p class="home-card-desc">Inbox summaries, type classification, linked tasks</p>
+        </a>
+
+        <a href="/news" class="home-card">
+            <div class="home-card-icon news-icon">
+                <svg viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M0 2.5A1.5 1.5 0 0 1 1.5 1h11A1.5 1.5 0 0 1 14 2.5v10.528c0 .3-.05.654-.238.972h.738a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 1 1 0v9a1.5 1.5 0 0 1-1.5 1.5H1.497A1.497 1.497 0 0 1 0 13.5v-11zM1 13.5c0 .274.22.5.497.5H13.5a.5.5 0 0 0 .5-.5V2.5a.5.5 0 0 0-.5-.5h-11a.5.5 0 0 0-.5.5v11z"/>
+                    <path d="M2 3h4v4H2V3zm0 5h4v1H2V8zm0 2h4v1H2v-1zm0 2h4v1H2v-1zm5-9h4v1H7V3zm0 2h4v1H7V5zm0 2h4v1H7V7zm0 2h4v1H7V9zm0 2h4v1H7v-1zm0 2h4v1H7v-1z"/>
+                </svg>
+            </div>
+            <div class="home-card-label">News</div>
+            <p class="home-card-desc">Sweden, tech, world, and science headlines</p>
+        </a>
+    </div>
+</div>

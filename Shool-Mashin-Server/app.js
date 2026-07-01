@@ -25,7 +25,10 @@ function computeSellPrice(item) {
 }
 
 function getLogDate() {
-  return overrideDate || new Date().toISOString().slice(0, 10);
+  if (overrideDate) return overrideDate;
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  return yesterday.toISOString().slice(0, 10);
 }
 
 function updateClock() {
@@ -84,30 +87,26 @@ function render() {
   const saleSelect = document.getElementById('saleSnack');
   const restockSelect = document.getElementById('restockSnack');
 
+  tbody.innerHTML = '';
   saleSelect.innerHTML = '<option value="">— Select snack —</option>';
   restockSelect.innerHTML = '<option value="">— Select snack —</option>';
 
   if (data.length === 0) {
     tbody.innerHTML = '<tr id="emptyRow"><td colspan="9" class="empty">No snacks added yet.</td></tr>';
     updateProfitSummary([]);
-    renderSnackToggles(data);
-    renderEditPrices(data);
     return;
   }
 
-  const tbodyFrag = document.createDocumentFragment();
-  const saleFrag = document.createDocumentFragment();
-  const restockFrag = document.createDocumentFragment();
-
   data.forEach(item => {
     const { text, cls } = statusLabel(item.remaining, item.startingStock);
+
+    const tr = document.createElement('tr');
     const sellPrice = computeSellPrice(item);
     const itemProfit = (item.buyCost != null && sellPrice != null)
       ? (sellPrice * item.totalPurchased) - (item.buyCost * item.startingStock)
       : null;
     const profitCls = itemProfit == null ? '' : itemProfit >= 0 ? 'profit-pos' : 'profit-neg';
 
-    const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${escapeHtml(item.name)}</td>
       <td>${fmt(item.buyCost)}</td>
@@ -119,34 +118,35 @@ function render() {
       <td><span class="badge ${cls}">${text}</span></td>
       <td><button class="del-btn" data-id="${item.id}">✕</button></td>
     `;
-    tbodyFrag.appendChild(tr);
+    tbody.appendChild(tr);
 
-    const opt = document.createElement('option');
-    opt.value = item.id;
-    opt.textContent = `${item.name} (${item.remaining} left)`;
-    saleFrag.appendChild(opt);
-    restockFrag.appendChild(opt.cloneNode(true));
+    [saleSelect, restockSelect].forEach(sel => {
+      const opt = document.createElement('option');
+      opt.value = item.id;
+      opt.textContent = `${item.name} (${item.remaining} left)`;
+      sel.appendChild(opt);
+    });
   });
 
-  tbody.innerHTML = '';
-  tbody.appendChild(tbodyFrag);
-  saleSelect.appendChild(saleFrag);
-  restockSelect.appendChild(restockFrag);
+  document.querySelectorAll('.del-btn').forEach(btn => {
+    btn.addEventListener('click', () => deleteSnack(Number(btn.dataset.id)));
+  });
 
   updateProfitSummary(data);
-  renderSnackToggles(data);
-  renderEditPrices(data);
+  renderSnackToggles();
+  renderEditPrices();
 }
 
-function renderEditPrices(data) {
+function renderEditPrices() {
+  const data = load();
   const container = document.getElementById('editPrices');
+  container.innerHTML = '';
 
   if (data.length === 0) {
     container.innerHTML = '<p class="settings-hint">No snacks yet.</p>';
     return;
   }
 
-  const frag = document.createDocumentFragment();
   data.forEach(item => {
     const row = document.createElement('div');
     row.className = 'price-edit-row';
@@ -154,7 +154,6 @@ function renderEditPrices(data) {
     const nameSpan = document.createElement('span');
     nameSpan.className = 'price-edit-name';
     nameSpan.textContent = item.name;
-    row.appendChild(nameSpan);
 
     ['buyCost', 'margin'].forEach(field => {
       const input = document.createElement('input');
@@ -175,16 +174,15 @@ function renderEditPrices(data) {
       row.appendChild(input);
     });
 
-    frag.appendChild(row);
+    row.insertBefore(nameSpan, row.firstChild);
+    container.appendChild(row);
   });
-
-  container.innerHTML = '';
-  container.appendChild(frag);
 }
 
-function renderSnackToggles(data) {
+function renderSnackToggles() {
+  const data = load();
   const container = document.getElementById('snackToggles');
-  const frag = document.createDocumentFragment();
+  container.innerHTML = '';
   data.forEach(item => {
     const label = document.createElement('label');
     label.className = 'toggle-label snack-toggle';
@@ -212,14 +210,12 @@ function renderSnackToggles(data) {
     leverEl.appendChild(sliderSpan);
     label.appendChild(span);
     label.appendChild(leverEl);
-    frag.appendChild(label);
+    container.appendChild(label);
   });
-  container.innerHTML = '';
-  container.appendChild(frag);
 }
 
 function fmt(val) {
-  return val != null ? Number(val).toFixed(2) + ' kr' : '—';
+  return val != null ? Number(val).toFixed(2) : '—';
 }
 
 function escapeHtml(str) {
@@ -334,36 +330,31 @@ const CHART_COLORS = ['#4299e1','#48bb78','#ed8936','#9f7aea','#f56565','#38b2ac
 
 function renderChart() {
   const history = loadHistory();
-  const isDaily = chartView === 'daily';
 
-  const snackSet = new Set();
-  const keySet = new Set();
+  const snacks = [...new Set(history.map(h => h.snackName))].sort();
+  const allKeys = [...new Set(history.map(h =>
+    chartView === 'daily' ? h.date : h.date.slice(0, 7)
+  ))].sort();
+
   const bySnack = {};
   history.forEach(({ date, snackName, qty }) => {
-    const key = isDaily ? date : date.slice(0, 7);
-    snackSet.add(snackName);
-    keySet.add(key);
+    const key = chartView === 'daily' ? date : date.slice(0, 7);
     if (!bySnack[snackName]) bySnack[snackName] = {};
     bySnack[snackName][key] = (bySnack[snackName][key] || 0) + qty;
   });
 
-  const snacks = [...snackSet].sort();
-  const allKeys = [...keySet].sort();
-  const colorMap = new Map(snacks.map((s, i) => [s, CHART_COLORS[i % CHART_COLORS.length]]));
-
   const datasets = snacks.filter(s => !hiddenSnacks.has(s)).map(snack => {
-    const color = colorMap.get(snack);
+    const colorIdx = snacks.indexOf(snack) % CHART_COLORS.length;
     return {
-      label: snack,
-      data: allKeys.map(k => bySnack[snack]?.[k] || 0),
-      borderColor: color,
-      backgroundColor: color + '22',
-      borderWidth: 2,
-      pointRadius: 3,
-      tension: 0.3,
-      fill: false,
-    };
-  });
+    label: snack,
+    data: allKeys.map(k => bySnack[snack]?.[k] || 0),
+    borderColor: CHART_COLORS[colorIdx],
+    backgroundColor: CHART_COLORS[colorIdx] + '22',
+    borderWidth: 2,
+    pointRadius: 3,
+    tension: 0.3,
+    fill: false,
+  };});
 
   const ctx = document.getElementById('purchaseChart').getContext('2d');
   if (chartInstance) chartInstance.destroy();
@@ -406,23 +397,17 @@ function exportToExcel() {
       historyRows.push([h.date, h.snackName, h.qty, profit]);
     });
 
-  // Sheet 2: Daily totals — one row per day, one column per snack + Total + Profit
+  // Sheet 3: Daily totals — one row per day, one column per snack
   const snackNames = [...new Set(history.map(h => h.snackName))].sort();
   const byDay = {};
-  const byDayProfit = {};
   history.forEach(({ date, snackName, qty }) => {
-    if (!byDay[date]) { byDay[date] = {}; byDayProfit[date] = 0; }
+    if (!byDay[date]) byDay[date] = {};
     byDay[date][snackName] = (byDay[date][snackName] || 0) + qty;
-    const item = snackMap[snackName];
-    const sp = item ? computeSellPrice(item) : null;
-    if (item?.buyCost != null && sp != null)
-      byDayProfit[date] = Math.round((byDayProfit[date] + (sp - item.buyCost) * qty) * 100) / 100;
   });
-  const dailyRows = [['Date', ...snackNames, 'Total', 'Profit']];
+  const dailyRows = [['Date', ...snackNames, 'Total']];
   Object.keys(byDay).sort().forEach(date => {
     const row = [date, ...snackNames.map(s => byDay[date][s] || 0)];
     row.push(snackNames.reduce((sum, s) => sum + (byDay[date][s] || 0), 0));
-    row.push(byDayProfit[date] ?? '');
     dailyRows.push(row);
   });
 
@@ -432,18 +417,7 @@ function exportToExcel() {
   XLSX.writeFile(wb, `vending-machine-${new Date().toISOString().slice(0,10)}.xlsx`);
 }
 
-document.getElementById('tableBody').addEventListener('click', e => {
-  const btn = e.target.closest('.del-btn');
-  if (btn) deleteSnack(Number(btn.dataset.id));
-});
-
 document.getElementById('exportBtn').addEventListener('click', exportToExcel);
-
-document.getElementById('resetAllBtn').addEventListener('click', () => {
-  if (!window.confirm('Reset everything? This will delete all snacks, sales history, and settings.')) return;
-  localStorage.clear();
-  location.reload();
-});
 document.getElementById('addSnackBtn').addEventListener('click', addSnack);
 document.getElementById('logSaleBtn').addEventListener('click', logSale);
 document.getElementById('restockBtn').addEventListener('click', restock);
